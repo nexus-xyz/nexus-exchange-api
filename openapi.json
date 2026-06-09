@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "https://nexus-exchange-demo.fly.dev",
+      "url": "https://exchange.nexus.xyz/api/exchange",
       "description": "Production"
     },
     {

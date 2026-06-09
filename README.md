@@ -20,7 +20,7 @@ Pre-1.0 semver — the minor version increments on breaking changes:
 
 ## Authentication
 
-All write endpoints require HMAC-SHA256 request signing. Read endpoints on public market data are unauthenticated.
+All endpoints require HMAC-SHA256 request signing, including market data.
 
 ### 1. Get a session token (EIP-191)
 
@@ -41,22 +41,50 @@ curl -X POST https://exchange.nexus.xyz/api/exchange/keys \
   -d '{"label": "my-bot"}'
 # → {"key_id": "nx_...", "secret": "...hex..."}
 # Save the secret — it is shown exactly once.
+export KEY_ID="nx_..."
+export SECRET="...hex..."
 ```
 
-### 3. Sign requests
+### 3. Deposit collateral
 
-Every authenticated request needs three headers. Build a canonical string, HMAC-SHA256 it with your secret:
+Before placing orders you need a balance. On testnet the deposit endpoint
+acts as a faucet — no real funds are required.
+
+```bash
+TS=$(date +%s%3N)
+BODY='{"amount":"100"}'
+BODY_HASH=$(printf '%s' "$BODY" | openssl dgst -sha256 | awk '{print $2}')
+SIG=$(printf '%s\nPOST\n/api/exchange/account/deposit\n\n%s' "$TS" "$BODY_HASH" \
+  | openssl dgst -sha256 -hmac "$SECRET" | awk '{print $2}')
+
+curl -X POST https://exchange.nexus.xyz/api/exchange/account/deposit \
+  -H "X-API-Key: $KEY_ID" \
+  -H "X-Timestamp: $TS" \
+  -H "X-Signature: $SIG" \
+  -H 'Content-Type: application/json' \
+  -d "$BODY"
+# → 200 OK
+```
+
+### 4. Sign requests
+
+Every authenticated request needs three headers. Build a canonical string
+and HMAC-SHA256 it with your secret. The canonical format is five
+newline-separated fields with no trailing newline:
 
 ```
-{unix_ms}\n{METHOD}\n{path}\n{query}\n{sha256(body)}
+{unix_ms}\n{METHOD}\n{path}\n{query}\n{sha256_hex(body)}
 ```
+
+**Important:** use `printf '%s'` (not `echo`) when piping to OpenSSL — `echo`
+appends a trailing newline that shifts the hash and causes a 401.
 
 ```bash
 TS=$(date +%s%3N)
 BODY='{"market_id":"BTC-USDX-PERP","side":"Buy","order_type":"Limit","price":"84000","quantity":"0.01","time_in_force":"GTC"}'
-BODY_HASH=$(echo -n "$BODY" | openssl dgst -sha256 | awk '{print $2}')
-CANONICAL="${TS}\nPOST\n/orders\n\n${BODY_HASH}"
-SIG=$(echo -e "$CANONICAL" | openssl dgst -sha256 -hmac "$SECRET" | awk '{print $2}')
+BODY_HASH=$(printf '%s' "$BODY" | openssl dgst -sha256 | awk '{print $2}')
+SIG=$(printf '%s\nPOST\n/api/exchange/orders\n\n%s' "$TS" "$BODY_HASH" \
+  | openssl dgst -sha256 -hmac "$SECRET" | awk '{print $2}')
 
 curl -X POST https://exchange.nexus.xyz/api/exchange/orders \
   -H "X-API-Key: $KEY_ID" \
