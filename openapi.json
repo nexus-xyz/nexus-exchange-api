@@ -3,7 +3,7 @@
   "info": {
     "title": "Nexus Exchange API",
     "description": "Perpetual futures exchange with HMAC API key authentication, tiered rate limiting, and real-time WebSocket streaming across 32 markets.",
-    "version": "0.3.1"
+    "version": "0.3.2"
   },
   "servers": [
     {
@@ -80,7 +80,7 @@
           "Authentication"
         ],
         "summary": "Sign in with EVM wallet",
-        "description": "Submit an EIP-191 personal_sign signature to receive a session token. The session token is used to create and manage API keys via /keys endpoints. For trading, use HMAC API keys instead.",
+        "description": "Submit an EIP-191 personal_sign signature to receive a session token. The session token is used to create and manage API keys via /keys endpoints. For trading, use HMAC API keys instead. Session tokens expire after 24 hours.",
         "requestBody": {
           "required": true,
           "content": {
@@ -1200,7 +1200,8 @@
           "429": {
             "$ref": "#/components/responses/RateLimited"
           }
-        }
+        },
+        "description": "Submit multiple orders in one request. Orders are processed sequentially and non-atomically: an early order consuming margin can cause a later order in the same batch to fail, and per-order failures do not abort the batch. The response array preserves request order with a per-order success or error result."
       }
     },
     "/orders/{order_id}": {
@@ -1356,6 +1357,71 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/account/credit": {
+      "post": {
+        "tags": [
+          "Account"
+        ],
+        "summary": "Claim synthetic USDX credit",
+        "description": "Credit synthetic USDX to the authenticated account, up to a per-API-key daily allowance (default 500 USDX, resets at midnight UTC). `amount` is a decimal string; omit it to claim the full remaining daily allowance. Returns 429 with code `daily_limit_exceeded` once the allowance is used up, and 403 with code `credits_frozen` while crediting is administratively frozen.",
+        "security": [
+          {
+            "hmacAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "example": {
+                "amount": "500"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Credit applied",
+            "content": {
+              "application/json": {
+                "example": {
+                  "amount": "500",
+                  "credited_today": "500",
+                  "daily_limit": "500"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "description": "Crediting is administratively frozen",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "credits_frozen",
+                  "message": "USDX crediting is temporarily frozen by an administrator. Existing balances remain tradeable."
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Daily credit allowance exhausted (resets at midnight UTC)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "daily_limit_exceeded",
+                  "message": "daily USDX credit allowance reached for this API key",
+                  "credited_today": "500",
+                  "daily_limit": "500"
+                }
+              }
+            }
           }
         }
       }
@@ -1521,7 +1587,7 @@
           "WebSocket"
         ],
         "summary": "Per-account WebSocket stream",
-        "description": "WebSocket endpoint for both public market data and per-account private channels. Requires a token from POST /ws/token:\n```\nwss://host/ws?token=YOUR_TOKEN\n```\nTokens are single-use and expire after 60 seconds.\n\nAfter connecting, send a subscribe message:\n```json\n{\"subscribe\": [\"orders\", \"fills\", \"positions\", \"balances\", \"trades:BTC-USDX-PERP\"]}\n```\n\n**Public channels** (no auth required for data, but token is always required to upgrade): `trades:*`, `trades:{market_id}`, `book:*`, `book:{market_id}`, `stats`.\n\n**Per-account channels** (token must be minted by the account owner): `orders`, `fills`, `positions`, `balances`.\n\nAll messages are JSON with a `type` field in the `Event` envelope.",
+        "description": "WebSocket endpoint for both public market data and per-account private channels. Requires a token from POST /ws/token:\n```\nwss://host/ws?token=YOUR_TOKEN\n```\nTokens are single-use and expire after 60 seconds.\n\nEvery client\u2192server and server\u2192client message is a JSON envelope tagged with an `op` field. Subscribe to one channel per message:\n```json\n{\"op\": \"subscribe\", \"channel\": \"trades\", \"market\": \"BTC-USDX-PERP\"}\n{\"op\": \"subscribe\", \"channel\": \"fills\"}\n```\nUnsubscribe with `{\"op\": \"unsubscribe\", \"channel\": \"...\", \"market\": \"...\"}`.\n\n**Public channels** (the token is always required to upgrade): `trades`, `book`, `candles` \u2014 each requires a `market` field.\n\n**Per-account channels** (scoped to the wallet that minted the token): `orders`, `fills`, `positions`, `balances`.\n\n**Server messages:**\n- `{\"op\": \"subscribed\", \"channel\": \"fills\", \"market\": null, \"seq_at_join\": 42}` \u2014 subscribe ack; `seq_at_join` is the channel's current sequence at attach time, used as the reconnect cursor.\n- `{\"op\": \"unsubscribed\", \"channel\": \"fills\", \"market\": null}` \u2014 unsubscribe ack.\n- `{\"op\": \"event\", \"channel\": \"fills\", \"market\": null, \"seq\": 43, \"payload\": {...}}` \u2014 a delivered event; `seq` is monotonic per channel.\n- `{\"op\": \"out_of_sync\", \"channel\": \"fills\", \"market\": null, \"oldest_seq\": 100}` \u2014 the requested `since` cursor fell behind the replay buffer; refetch state over REST and resubscribe with a fresh cursor.\n- `{\"op\": \"error\", \"message\": \"...\"}` \u2014 invalid op, unknown channel, or bad message format.\n\n**Reconnection:** tokens are single-use \u2014 mint a new one via POST /ws/token before reconnecting. To resume a channel without gaps, pass the last `seq` you received:\n```json\n{\"op\": \"subscribe\", \"channel\": \"fills\", \"since\": 42}\n```",
         "parameters": [
           {
             "name": "token",
@@ -1541,7 +1607,7 @@
           "WebSocket"
         ],
         "summary": "Public WebSocket stream (legacy)",
-        "description": "Legacy public-only WebSocket endpoint. Prefer GET /ws which also supports per-account channels. Requires a token from POST /ws-tokens.",
+        "description": "Legacy public-only WebSocket endpoint. Prefer GET /ws which also supports per-account channels. Requires a token from POST /ws-tokens. Unlike /ws, the protocol is a single untagged subscribe message listing channels:\n```json\n{\"subscribe\": [\"trades:*\", \"book:BTC-USDX-PERP\", \"stats\"]}\n```\nChannels: `trades:*` / `trades:{market_id}`, `book:*` / `book:{market_id}`, `stats`.",
         "parameters": [
           {
             "name": "token",
