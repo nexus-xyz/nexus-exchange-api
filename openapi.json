@@ -7,8 +7,12 @@
   },
   "servers": [
     {
-      "url": "https://nexus-exchange-demo.fly.dev",
+      "url": "https://exchange.nexus.xyz/api/exchange",
       "description": "Production"
+    },
+    {
+      "url": "https://nexus-exchange-demo.fly.dev",
+      "description": "Demo/Staging"
     },
     {
       "url": "http://localhost:9090",
@@ -1367,7 +1371,7 @@
           "Account"
         ],
         "summary": "Claim synthetic USDX credit",
-        "description": "Credit synthetic USDX to the authenticated account, up to a per-API-key daily allowance (default 500 USDX, resets at midnight UTC). `amount` is a decimal string; omit it to claim the full remaining daily allowance. Returns 429 with code `daily_limit_exceeded` once the allowance is used up, and 403 with code `credits_frozen` while crediting is administratively frozen.",
+        "description": "Credit synthetic USDX to the authenticated account, up to a per-API-key daily allowance (default 500 USDX, resets at midnight UTC). `amount` is a decimal string; omit it to claim the full remaining daily allowance. Returns 429 with code `daily_limit_exceeded` once the allowance is used up, and 403 with code `credits_frozen` while crediting is administratively frozen. This is a testnet faucet: the credited USDX is synthetic and carries no real-world value.",
         "security": [
           {
             "hmacAuth": []
@@ -1377,6 +1381,9 @@
           "required": false,
           "content": {
             "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreditRequest"
+              },
               "example": {
                 "amount": "500"
               }
@@ -1388,6 +1395,9 @@
             "description": "Credit applied",
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditResponse"
+                },
                 "example": {
                   "amount": "500",
                   "credited_today": "500",
@@ -1422,6 +1432,41 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/account/rate-limit": {
+      "get": {
+        "tags": [
+          "Account"
+        ],
+        "summary": "Get rate limit status",
+        "description": "Returns the authenticated caller's rate limit tier, effective request ceiling, remaining requests, and reset timestamp \u2014 the same data surface as the X-RateLimit-* response headers, exposed as a queryable resource. This endpoint does not consume a rate limit token, so it can be polled freely to self-manage request pacing without depleting the caller's budget. For HMAC API keys with a per-key rate, the reported values are the binding minimum of the key bucket and the owner bucket. For unlimited-tier callers (gateway keys), `limit`, `remaining`, and `reset_at_ms` are null.",
+        "operationId": "fetchRateLimitStatus",
+        "security": [
+          {
+            "hmacAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitStatus"
+                },
+                "example": {
+                  "tier": "pro",
+                  "limit": 20,
+                  "remaining": 17,
+                  "reset_at_ms": 1765432100123
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
           }
         }
       }
@@ -2341,6 +2386,73 @@
             "items": {
               "$ref": "#/components/schemas/Position"
             }
+          }
+        }
+      },
+      "CreditRequest": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "string",
+            "description": "Synthetic USDX to credit (decimal string). Omit to claim the full remaining daily allowance."
+          }
+        }
+      },
+      "CreditResponse": {
+        "type": "object",
+        "required": [
+          "amount",
+          "credited_today",
+          "daily_limit"
+        ],
+        "properties": {
+          "amount": {
+            "type": "string",
+            "description": "USDX credited by this request (decimal string)."
+          },
+          "credited_today": {
+            "type": "string",
+            "description": "Total USDX credited to this API key so far today (decimal string)."
+          },
+          "daily_limit": {
+            "type": "string",
+            "description": "Per-API-key daily credit allowance in USDX (decimal string)."
+          }
+        }
+      },
+      "RateLimitStatus": {
+        "type": "object",
+        "required": [
+          "tier",
+          "limit",
+          "remaining",
+          "reset_at_ms"
+        ],
+        "properties": {
+          "tier": {
+            "type": "string",
+            "description": "Rate limit tier name (e.g. `pro`, `marketmaker`, `unlimited`)."
+          },
+          "limit": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Maximum requests per second. Also the burst capacity \u2014 the token bucket holds one second's worth of tokens \u2014 so `remaining` never exceeds it. Null for the unlimited tier."
+          },
+          "remaining": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Requests that can be made right now before throttling (tokens currently in the bucket). Null for the unlimited tier."
+          },
+          "reset_at_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Unix timestamp in milliseconds when the bucket refills back to `limit`; `0` when it is already full. Null for the unlimited tier."
           }
         }
       },
