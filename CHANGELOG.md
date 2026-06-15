@@ -8,6 +8,19 @@ Pre-1.0 versioning convention:
 
 ---
 
+## [0.3.2] — 2026-06-10
+
+### Added
+
+- `POST /account/credit` — claim synthetic USDX against a per-API-key daily allowance (default 500 USDX/day, resets at midnight UTC). Omit `amount` to claim the full remaining allowance. Documented since the Gate 2 release but missing from the spec.
+- `POST /orders/batch` description — sequential, non-atomic processing; per-order results preserve request order
+- `POST /auth/login` — documented the 24-hour session token expiry
+
+### Fixed
+
+- `GET /ws` protocol documentation now matches the implementation: messages are JSON envelopes tagged with an `op` field (`subscribe` / `unsubscribe` client ops; `subscribed`, `unsubscribed`, `event`, `out_of_sync`, `error` server ops), one channel per subscribe with an optional `market` field, and `since` / `seq_at_join` reconnect cursors. The previously documented untagged `{"subscribe": [...]}` array format belongs to the legacy `GET /stream` endpoint (now documented there) and is rejected by `/ws`.
+- `GET /ws` channel list corrected: `trades`, `book`, `candles` (public, per-market) and `orders`, `fills`, `positions`, `balances` (per-account). `stats` is a `/stream`-only channel.
+
 ## [0.3.1] — 2026-06-05
 
 ### Added
