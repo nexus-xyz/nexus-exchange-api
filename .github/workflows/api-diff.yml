@@ -1,0 +1,50 @@
+name: API diff
+
+# On every PR that changes openapi.json, classify the diff against the base
+# branch. Non-breaking changes pass. Breaking changes (removed endpoint,
+# renamed field, new required parameter, etc.) BLOCK the PR until they are
+# consciously acknowledged — pre-1.0 a breaking change is allowed, but it must
+# be a deliberate minor bump (0.X.0), not a surprise.
+#
+# To land an intended breaking change:
+#   1. use a `feat!:` commit (or a BREAKING CHANGE footer) so release-please
+#      bumps the minor version, and
+#   2. add the `breaking-change` label to this PR to acknowledge and unblock.
+
+on:
+  pull_request:
+    paths:
+      - 'openapi.json'
+
+permissions:
+  contents: read
+
+jobs:
+  diff:
+    name: Classify API changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract base spec
+        run: git show "origin/${{ github.base_ref }}:openapi.json" > /tmp/base.json
+
+      - name: Install oasdiff
+        run: curl -fsSL https://raw.githubusercontent.com/oasdiff/oasdiff/main/install.sh | sh
+
+      - name: Changelog (informational)
+        run: oasdiff changelog /tmp/base.json openapi.json
+
+      - name: Block unacknowledged breaking changes
+        if: ${{ !contains(github.event.pull_request.labels.*.name, 'breaking-change') }}
+        run: |
+          if ! oasdiff breaking /tmp/base.json openapi.json --fail-on ERR; then
+            echo "::error::Breaking API change detected."
+            echo "::error::Pre-1.0 this is allowed but must be a deliberate minor bump (0.X.0):"
+            echo "::error::  1. use a 'feat!:' commit (or BREAKING CHANGE footer) so release-please bumps the minor"
+            echo "::error::  2. add the 'breaking-change' label to this PR to acknowledge and unblock"
+            exit 1
+          fi
+          echo "No breaking changes detected."
