@@ -80,9 +80,7 @@
   "paths": {
     "/auth/login": {
       "post": {
-        "tags": [
-          "Authentication"
-        ],
+        "tags": ["Authentication"],
         "summary": "Sign in with EVM wallet",
         "description": "Submit an EIP-191 personal_sign signature to receive a session token. The session token is used to create and manage API keys via /keys endpoints. For trading, use HMAC API keys instead. Session tokens expire after 24 hours.",
         "requestBody": {
@@ -122,9 +120,7 @@
     },
     "/keys": {
       "post": {
-        "tags": [
-          "Authentication"
-        ],
+        "tags": ["Authentication"],
         "summary": "Create an API key",
         "description": "Create a new HMAC API key for the authenticated wallet. Returns the secret once \u2014 it is never stored or shown again. Requires a session token (Bearer) from POST /auth/login.",
         "security": [
@@ -150,9 +146,7 @@
         }
       },
       "get": {
-        "tags": [
-          "Authentication"
-        ],
+        "tags": ["Authentication"],
         "summary": "List your API keys",
         "description": "Returns key IDs and tiers for all keys owned by the authenticated wallet. Secrets are not included.",
         "security": [
@@ -182,9 +176,7 @@
     },
     "/keys/{key_id}": {
       "delete": {
-        "tags": [
-          "Authentication"
-        ],
+        "tags": ["Authentication"],
         "summary": "Delete an API key",
         "description": "Delete a key you own. Cannot delete keys owned by other wallets.",
         "security": [
@@ -217,9 +209,7 @@
     },
     "/agents/register": {
       "post": {
-        "tags": [
-          "Agents"
-        ],
+        "tags": ["Agents"],
         "summary": "Register an agent key",
         "description": "Register a new agent key for your wallet. An agent is an Ethereum-derived keypair that can sign trading requests on your behalf without exposing your main wallet. The registration is authorized by an EIP-712 signature from the wallet that will own the agent \u2014 no session token required.\n\nEIP-712 domain: `{ name: 'NexusExchange', version: '1', chainId: <testnet chain id> }`.\nTyped data type: `RegisterAgent { address agent, uint256 expiresAt, uint256 nonce }`.",
         "requestBody": {
@@ -265,9 +255,7 @@
     },
     "/agents": {
       "get": {
-        "tags": [
-          "Agents"
-        ],
+        "tags": ["Agents"],
         "summary": "List your agents",
         "description": "Returns all non-expired agent keys registered to the authenticated wallet.",
         "security": [
@@ -305,9 +293,7 @@
     },
     "/agents/{address}": {
       "delete": {
-        "tags": [
-          "Agents"
-        ],
+        "tags": ["Agents"],
         "summary": "Revoke an agent",
         "description": "Immediately revoke an agent key. Any in-flight requests signed by the revoked agent will be rejected after this call returns.",
         "security": [
@@ -341,9 +327,7 @@
     },
     "/ws-tokens": {
       "post": {
-        "tags": [
-          "WebSocket"
-        ],
+        "tags": ["WebSocket"],
         "summary": "Mint a WebSocket token (legacy)",
         "description": "Legacy endpoint. Prefer POST /ws/token which supports both HMAC keys and registered agents. Returns a short-lived (60s), single-use token for the public /stream endpoint.",
         "security": [
@@ -370,9 +354,7 @@
     },
     "/ws/token": {
       "post": {
-        "tags": [
-          "WebSocket"
-        ],
+        "tags": ["WebSocket"],
         "summary": "Mint a WebSocket token",
         "description": "Returns a short-lived (60s), single-use token bound to the authenticated account. Pass it as `?token=TOKEN` when upgrading to `GET /ws`. Supports HMAC keys, registered agent keys, and session tokens (Bearer). The token encodes the account identity so per-account channels (orders, fills, positions, balances) are automatically scoped to the connected wallet.",
         "security": [
@@ -399,9 +381,7 @@
     },
     "/markets": {
       "get": {
-        "tags": [
-          "Markets"
-        ],
+        "tags": ["Markets"],
         "summary": "List all markets",
         "operationId": "fetchMarkets",
         "description": "Returns market parameters for all perpetual futures markets including tick size, lot size, margin rates, and maximum leverage.",
@@ -450,9 +430,7 @@
     },
     "/markets/summary": {
       "get": {
-        "tags": [
-          "Markets"
-        ],
+        "tags": ["Markets"],
         "summary": "Market summaries with volume",
         "description": "Returns mark price, 24h volume, and trade count for all markets.",
         "security": [
@@ -493,9 +471,7 @@
     },
     "/markets/{market_id}/ticker": {
       "get": {
-        "tags": [
-          "Tickers"
-        ],
+        "tags": ["Tickers"],
         "summary": "Get ticker for a market",
         "operationId": "fetchTicker",
         "x-ccxt-method": "fetchTicker",
@@ -555,9 +531,7 @@
     },
     "/tickers": {
       "get": {
-        "tags": [
-          "Tickers"
-        ],
+        "tags": ["Tickers"],
         "summary": "Get tickers for all markets",
         "operationId": "fetchTickers",
         "x-ccxt-method": "fetchTickers",
@@ -591,9 +565,7 @@
     },
     "/markets/{market_id}/orderbook": {
       "get": {
-        "tags": [
-          "Order Book"
-        ],
+        "tags": ["Order Book"],
         "summary": "Get order book",
         "operationId": "fetchOrderBook",
         "x-ccxt-method": "fetchOrderBook",
@@ -618,24 +590,12 @@
                 "example": {
                   "symbol": "BTC-USDX-PERP",
                   "bids": [
-                    [
-                      50100.5,
-                      1.4
-                    ],
-                    [
-                      50099.0,
-                      2.1
-                    ]
+                    [50100.5, 1.4],
+                    [50099.0, 2.1]
                   ],
                   "asks": [
-                    [
-                      50102.0,
-                      0.8
-                    ],
-                    [
-                      50103.5,
-                      1.2
-                    ]
+                    [50102.0, 0.8],
+                    [50103.5, 1.2]
                   ],
                   "timestamp": 1776033930898,
                   "datetime": "2026-04-12T22:45:30.898Z",
@@ -658,9 +618,7 @@
     },
     "/markets/{market_id}/trades": {
       "get": {
-        "tags": [
-          "Trades"
-        ],
+        "tags": ["Trades"],
         "summary": "Get recent trades",
         "operationId": "fetchTrades",
         "x-ccxt-method": "fetchTrades",
@@ -724,9 +682,7 @@
     },
     "/markets/{market_id}/candles": {
       "get": {
-        "tags": [
-          "Candles"
-        ],
+        "tags": ["Candles"],
         "summary": "Get OHLCV candles",
         "operationId": "fetchOHLCV",
         "x-ccxt-method": "fetchOHLCV",
@@ -745,12 +701,7 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": [
-                "1s",
-                "1m",
-                "5m",
-                "1h"
-              ],
+              "enum": ["1s", "1m", "5m", "1h"],
               "default": "1m"
             }
           },
@@ -802,14 +753,7 @@
                   }
                 },
                 "example": [
-                  [
-                    1776033900000,
-                    48062.0,
-                    51903.0,
-                    44992.0,
-                    51903.0,
-                    27.123
-                  ]
+                  [1776033900000, 48062.0, 51903.0, 44992.0, 51903.0, 27.123]
                 ]
               }
             }
@@ -825,9 +769,7 @@
     },
     "/markets/{market_id}/funding": {
       "get": {
-        "tags": [
-          "Funding"
-        ],
+        "tags": ["Funding"],
         "summary": "Get funding rate history",
         "security": [
           {
@@ -882,9 +824,7 @@
     },
     "/markets/{market_id}/status": {
       "get": {
-        "tags": [
-          "Markets"
-        ],
+        "tags": ["Markets"],
         "summary": "Get market status and halt info (v0.21)",
         "description": "Returns current market status including halt state from ADL exhaustion. Halted markets reject new orders with ExchangeError::MarketHalted.",
         "security": [
@@ -922,9 +862,7 @@
     },
     "/markets/{market_id}/adl-events": {
       "get": {
-        "tags": [
-          "Markets"
-        ],
+        "tags": ["Markets"],
         "summary": "Get ADL settlement history for a market (v0.21)",
         "description": "Returns up to `limit` ADL settlement events for the market, most recent first. Populated when the insurance fund is depleted and auto-deleveraging closes opposite-side positions to absorb bad debt.",
         "security": [
@@ -971,9 +909,7 @@
     },
     "/account/{address}/adl-history": {
       "get": {
-        "tags": [
-          "Account"
-        ],
+        "tags": ["Account"],
         "summary": "Get ADL events touching an account (v0.21)",
         "description": "Returns ADL settlements where the specified address was either the bankrupt target or one of the counterparties whose position was closed.",
         "security": [
@@ -1026,9 +962,7 @@
     },
     "/markets/{market_id}/mark-price": {
       "get": {
-        "tags": [
-          "Markets"
-        ],
+        "tags": ["Markets"],
         "summary": "Get mark price",
         "security": [
           {
@@ -1063,9 +997,7 @@
     },
     "/orders": {
       "post": {
-        "tags": [
-          "Trading"
-        ],
+        "tags": ["Trading"],
         "summary": "Submit an order",
         "operationId": "createOrder",
         "x-ccxt-method": "createOrder",
@@ -1115,9 +1047,7 @@
         }
       },
       "get": {
-        "tags": [
-          "Account"
-        ],
+        "tags": ["Account"],
         "summary": "List open orders",
         "operationId": "fetchOpenOrders",
         "x-ccxt-method": "fetchOpenOrders",
@@ -1149,9 +1079,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "Trading"
-        ],
+        "tags": ["Trading"],
         "summary": "Cancel all orders",
         "operationId": "cancelAllOrders",
         "x-ccxt-method": "cancelAllOrders",
@@ -1185,9 +1113,7 @@
     },
     "/orders/batch": {
       "post": {
-        "tags": [
-          "Trading"
-        ],
+        "tags": ["Trading"],
         "summary": "Submit multiple orders",
         "security": [
           {
@@ -1223,9 +1149,7 @@
     },
     "/orders/{order_id}": {
       "get": {
-        "tags": [
-          "Account"
-        ],
+        "tags": ["Account"],
         "summary": "Get order by ID",
         "operationId": "fetchOrder",
         "x-ccxt-method": "fetchOrder",
@@ -1265,9 +1189,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "Trading"
-        ],
+        "tags": ["Trading"],
         "summary": "Cancel an order",
         "operationId": "cancelOrder",
         "x-ccxt-method": "cancelOrder",
@@ -1302,9 +1224,7 @@
     },
     "/account": {
       "get": {
-        "tags": [
-          "Account"
-        ],
+        "tags": ["Account"],
         "summary": "Get account summary",
         "operationId": "fetchBalance",
         "x-ccxt-method": "fetchBalance",
@@ -1342,9 +1262,7 @@
     },
     "/account/deposit": {
       "post": {
-        "tags": [
-          "Account"
-        ],
+        "tags": ["Account"],
         "summary": "Deposit USDX collateral",
         "security": [
           {
@@ -1383,9 +1301,7 @@
     },
     "/account/credit": {
       "post": {
-        "tags": [
-          "Account"
-        ],
+        "tags": ["Account"],
         "summary": "Claim synthetic USDX credit",
         "description": "Credit synthetic USDX to the authenticated account, up to a per-API-key daily allowance (default 500 USDX, resets at midnight UTC). `amount` is a decimal string; omit it to claim the full remaining daily allowance. Returns 429 with code `daily_limit_exceeded` once the allowance is used up, and 403 with code `credits_frozen` while crediting is administratively frozen. This is a testnet faucet: the credited USDX is synthetic and carries no real-world value.",
         "security": [
@@ -1454,9 +1370,7 @@
     },
     "/account/rate-limit": {
       "get": {
-        "tags": [
-          "Account"
-        ],
+        "tags": ["Account"],
         "summary": "Get rate limit status",
         "description": "Returns the authenticated caller's rate limit tier, effective request ceiling, remaining requests, and reset timestamp \u2014 the same data surface as the X-RateLimit-* response headers, exposed as a queryable resource. This endpoint does not consume a rate limit token, so it can be polled freely to self-manage request pacing without depleting the caller's budget. For HMAC API keys with a per-key rate, the reported values are the binding minimum of the key bucket and the owner bucket. For unlimited-tier callers (gateway keys), `limit`, `remaining`, and `reset_at_ms` are null.",
         "operationId": "fetchRateLimitStatus",
@@ -1490,9 +1404,7 @@
     },
     "/positions": {
       "get": {
-        "tags": [
-          "Positions"
-        ],
+        "tags": ["Positions"],
         "summary": "List open positions",
         "operationId": "fetchPositions",
         "x-ccxt-method": "fetchPositions",
@@ -1537,9 +1449,7 @@
     },
     "/fills": {
       "get": {
-        "tags": [
-          "Account"
-        ],
+        "tags": ["Account"],
         "summary": "List your fills",
         "description": "Returns up to 1000 fills for the authenticated account, newest first. Fills are trade executions resulting from order matches \u2014 each fill carries the matched price, quantity, fee, and whether it was the taker or maker side.",
         "security": [
@@ -1599,9 +1509,7 @@
     },
     "/withdrawals": {
       "get": {
-        "tags": [
-          "Account"
-        ],
+        "tags": ["Account"],
         "summary": "List your withdrawals",
         "description": "Returns up to 100 withdrawal records for the authenticated account, newest first.",
         "security": [
@@ -1646,9 +1554,7 @@
     },
     "/ws": {
       "get": {
-        "tags": [
-          "WebSocket"
-        ],
+        "tags": ["WebSocket"],
         "summary": "Per-account WebSocket stream",
         "description": "WebSocket endpoint for both public market data and per-account private channels. Requires a token from POST /ws/token:\n```\nwss://host/ws?token=YOUR_TOKEN\n```\nTokens are single-use and expire after 60 seconds.\n\nEvery client\u2192server and server\u2192client message is a JSON envelope tagged with an `op` field. Subscribe to one channel per message:\n```json\n{\"op\": \"subscribe\", \"channel\": \"trades\", \"market\": \"BTC-USDX-PERP\"}\n{\"op\": \"subscribe\", \"channel\": \"fills\"}\n```\nUnsubscribe with `{\"op\": \"unsubscribe\", \"channel\": \"...\", \"market\": \"...\"}`.\n\n**Public channels** (the token is always required to upgrade): `trades`, `book`, `candles` \u2014 each requires a `market` field.\n\n**Per-account channels** (scoped to the wallet that minted the token): `orders`, `fills`, `positions`, `balances`.\n\n**Server messages:**\n- `{\"op\": \"subscribed\", \"channel\": \"fills\", \"market\": null, \"seq_at_join\": 42}` \u2014 subscribe ack; `seq_at_join` is the channel's current sequence at attach time, used as the reconnect cursor.\n- `{\"op\": \"unsubscribed\", \"channel\": \"fills\", \"market\": null}` \u2014 unsubscribe ack.\n- `{\"op\": \"event\", \"channel\": \"fills\", \"market\": null, \"seq\": 43, \"payload\": {...}}` \u2014 a delivered event; `seq` is monotonic per channel.\n- `{\"op\": \"out_of_sync\", \"channel\": \"fills\", \"market\": null, \"oldest_seq\": 100}` \u2014 the requested `since` cursor fell behind the replay buffer; refetch state over REST and resubscribe with a fresh cursor.\n- `{\"op\": \"error\", \"message\": \"...\"}` \u2014 invalid op, unknown channel, or bad message format.\n\n**Reconnection:** tokens are single-use \u2014 mint a new one via POST /ws/token before reconnecting. To resume a channel without gaps, pass the last `seq` you received:\n```json\n{\"op\": \"subscribe\", \"channel\": \"fills\", \"since\": 42}\n```",
         "parameters": [
@@ -1666,9 +1572,7 @@
     },
     "/stream": {
       "get": {
-        "tags": [
-          "WebSocket"
-        ],
+        "tags": ["WebSocket"],
         "summary": "Public WebSocket stream (legacy)",
         "description": "Legacy public-only WebSocket endpoint. Prefer GET /ws which also supports per-account channels. Requires a token from POST /ws-tokens. Unlike /ws, the protocol is a single untagged subscribe message listing channels:\n```json\n{\"subscribe\": [\"trades:*\", \"book:BTC-USDX-PERP\", \"stats\"]}\n```\nChannels: `trades:*` / `trades:{market_id}`, `book:*` / `book:{market_id}`, `stats`.",
         "parameters": [
@@ -1686,9 +1590,7 @@
     },
     "/admin/tiers": {
       "put": {
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "summary": "Set account tier",
         "description": "Assign a rate-limit tier to an address. Invalidates the existing rate-limit bucket so the new cap takes effect immediately.",
         "security": [
@@ -1725,9 +1627,7 @@
         }
       },
       "get": {
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "summary": "List tier overrides",
         "description": "Returns all addresses with non-default tier assignments.",
         "security": [
@@ -1757,9 +1657,7 @@
     },
     "/admin/tiers/{address}": {
       "delete": {
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "summary": "Reset account tier",
         "description": "Remove a tier override, reverting the address to the default Pro tier.",
         "security": [
@@ -1793,9 +1691,7 @@
     },
     "/health": {
       "get": {
-        "tags": [
-          "Markets"
-        ],
+        "tags": ["Markets"],
         "summary": "Health check",
         "description": "No authentication required. Used by Fly.io health checks and uptime monitors.",
         "responses": {
@@ -1899,10 +1795,7 @@
     "schemas": {
       "LoginRequest": {
         "type": "object",
-        "required": [
-          "message",
-          "signature"
-        ],
+        "required": ["message", "signature"],
         "properties": {
           "message": {
             "type": "string",
@@ -1980,10 +1873,7 @@
           },
           "status": {
             "type": "string",
-            "enum": [
-              "active",
-              "halted"
-            ],
+            "enum": ["active", "halted"],
             "description": "v0.21: halted when ADL pool exhausted"
           },
           "halt_reason": {
@@ -2010,10 +1900,7 @@
           },
           "status": {
             "type": "string",
-            "enum": [
-              "active",
-              "halted"
-            ]
+            "enum": ["active", "halted"]
           },
           "halt_reason": {
             "type": "string",
@@ -2228,10 +2115,7 @@
           },
           "side": {
             "type": "string",
-            "enum": [
-              "buy",
-              "sell"
-            ]
+            "enum": ["buy", "sell"]
           },
           "timestamp": {
             "type": "integer"
@@ -2287,17 +2171,11 @@
           },
           "side": {
             "type": "string",
-            "enum": [
-              "Buy",
-              "Sell"
-            ]
+            "enum": ["Buy", "Sell"]
           },
           "order_type": {
             "type": "string",
-            "enum": [
-              "Limit",
-              "Market"
-            ]
+            "enum": ["Limit", "Market"]
           },
           "price": {
             "type": "string",
@@ -2308,11 +2186,7 @@
           },
           "time_in_force": {
             "type": "string",
-            "enum": [
-              "GTC",
-              "IOC",
-              "FOK"
-            ]
+            "enum": ["GTC", "IOC", "FOK"]
           },
           "reduce_only": {
             "type": "boolean"
@@ -2348,10 +2222,7 @@
           },
           "side": {
             "type": "string",
-            "enum": [
-              "Buy",
-              "Sell"
-            ]
+            "enum": ["Buy", "Sell"]
           },
           "order_type": {
             "type": "string"
@@ -2421,11 +2292,7 @@
       },
       "CreditResponse": {
         "type": "object",
-        "required": [
-          "amount",
-          "credited_today",
-          "daily_limit"
-        ],
+        "required": ["amount", "credited_today", "daily_limit"],
         "properties": {
           "amount": {
             "type": "string",
@@ -2443,36 +2310,22 @@
       },
       "RateLimitStatus": {
         "type": "object",
-        "required": [
-          "tier",
-          "limit",
-          "remaining",
-          "reset_at_ms"
-        ],
+        "required": ["tier", "limit", "remaining", "reset_at_ms"],
         "properties": {
           "tier": {
             "type": "string",
             "description": "Rate limit tier name (e.g. `pro`, `marketmaker`, `unlimited`)."
           },
           "limit": {
-            "type": [
-              "integer",
-              "null"
-            ],
+            "type": ["integer", "null"],
             "description": "Maximum requests per second. Also the burst capacity \u2014 the token bucket holds one second's worth of tokens \u2014 so `remaining` never exceeds it. Null for the unlimited tier."
           },
           "remaining": {
-            "type": [
-              "integer",
-              "null"
-            ],
+            "type": ["integer", "null"],
             "description": "Requests that can be made right now before throttling (tokens currently in the bucket). Null for the unlimited tier."
           },
           "reset_at_ms": {
-            "type": [
-              "integer",
-              "null"
-            ],
+            "type": ["integer", "null"],
             "description": "Unix timestamp in milliseconds when the bucket refills back to `limit`; `0` when it is already full. Null for the unlimited tier."
           }
         }
@@ -2485,10 +2338,7 @@
           },
           "side": {
             "type": "string",
-            "enum": [
-              "Long",
-              "Short"
-            ]
+            "enum": ["Long", "Short"]
           },
           "size": {
             "type": "string"
@@ -2509,12 +2359,7 @@
       },
       "AgentRegistrationRequest": {
         "type": "object",
-        "required": [
-          "wallet",
-          "agent",
-          "nonce",
-          "signature"
-        ],
+        "required": ["wallet", "agent", "nonce", "signature"],
         "properties": {
           "wallet": {
             "type": "string",
@@ -2583,10 +2428,7 @@
           },
           "side": {
             "type": "string",
-            "enum": [
-              "buy",
-              "sell"
-            ]
+            "enum": ["buy", "sell"]
           },
           "price": {
             "type": "string",
@@ -2602,10 +2444,7 @@
           },
           "taker_or_maker": {
             "type": "string",
-            "enum": [
-              "taker",
-              "maker"
-            ]
+            "enum": ["taker", "maker"]
           },
           "timestamp": {
             "type": "integer",

@@ -1,0 +1,40 @@
+name: Spec lint
+
+# Sanity checks on the OpenAPI spec for every PR that touches it (and on main):
+#   1. valid JSON
+#   2. valid OpenAPI 3.1 (structure + $ref resolution)
+#   3. consistent formatting (prettier, pinned)
+# Breaking-change classification lives in api-diff.yml.
+
+on:
+  pull_request:
+    paths:
+      - 'openapi.json'
+      - '.github/workflows/spec-lint.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'openapi.json'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate & format-check openapi.json
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: JSON syntax
+        run: |
+          python3 -m json.tool openapi.json > /dev/null
+          echo "openapi.json is valid JSON"
+
+      - name: OpenAPI 3.1 structural validity
+        run: |
+          pipx run openapi-spec-validator openapi.json
+          echo "openapi.json is a valid OpenAPI document"
+
+      - name: Formatting (prettier)
+        run: npx -y prettier@3.8.4 --check openapi.json
