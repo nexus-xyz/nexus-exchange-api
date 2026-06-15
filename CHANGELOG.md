@@ -8,6 +8,15 @@ Pre-1.0 versioning convention:
 
 ---
 
+## [0.3.4](https://github.com/nexus-xyz/nexus-exchange-api/compare/v0.3.3...v0.3.4) (2026-06-15)
+
+
+### Bug Fixes
+
+* add required response descriptions to all 200 responses ([#8](https://github.com/nexus-xyz/nexus-exchange-api/issues/8)) ([dc3fe8b](https://github.com/nexus-xyz/nexus-exchange-api/commit/dc3fe8bb9674a6c81c962b2431d06becd834c16a))
+* **docs:** correct HMAC example, add deposit step, fix auth claim, fix servers URL ([#1](https://github.com/nexus-xyz/nexus-exchange-api/issues/1)) ([7af831c](https://github.com/nexus-xyz/nexus-exchange-api/commit/7af831c860cd3469a88f9ed5e4db6c39d87e2d50))
+* use OpenAPI 3.1 null type instead of 3.0 nullable ([#12](https://github.com/nexus-xyz/nexus-exchange-api/issues/12)) ([3f4d6d0](https://github.com/nexus-xyz/nexus-exchange-api/commit/3f4d6d0d54707f1395709628c1fd954ab9c95a9f))
+
 ## [0.3.3](https://github.com/nexus-xyz/nexus-exchange-api/compare/v0.3.2...v0.3.3) (2026-06-15)
 
 
