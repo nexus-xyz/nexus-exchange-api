@@ -1,0 +1,36 @@
+name: release-please
+
+# This repo is the source of truth for the Nexus Exchange API spec.
+#
+# Spec PRs land on main WITHOUT bumping the version — the conventional commit
+# type carries the intent (feat: / fix: -> patch, feat! or BREAKING CHANGE
+# -> minor, pre-1.0). release-please accumulates them into a running release
+# PR. Merging that release PR is the deliberate, batched release: it bumps
+# openapi.json's info.version, updates CHANGELOG.md, tags vX.Y.Z, and cuts a
+# GitHub Release.
+#
+# Decoupling merge from release means a bad spec merge can be reverted before
+# it is ever published — consumers (monorepo, SDK) only ever vendor tagged
+# releases, never main.
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

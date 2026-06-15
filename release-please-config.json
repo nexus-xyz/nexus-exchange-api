@@ -1,0 +1,18 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "release-type": "simple",
+  "bump-minor-pre-major": false,
+  "packages": {
+    ".": {
+      "release-type": "simple",
+      "bump-minor-pre-major": false,
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "openapi.json",
+          "jsonpath": "$.info.version"
+        }
+      ]
+    }
+  }
+}
