@@ -14,8 +14,7 @@ Pre-1.0 versioning convention:
 ### Features
 
 * add GET /account/rate-limit status endpoint ([#4](https://github.com/nexus-xyz/nexus-exchange-api/issues/4)) ([dd3a748](https://github.com/nexus-xyz/nexus-exchange-api/commit/dd3a748f9971058e711ce7a429d4bf6186516f29))
-* v0.3.2 — add POST /account/credit, fix GET /ws protocol docs (ENG-3226) ([d0681dc](https://github.com/nexus-xyz/nexus-exchange-api/commit/d0681dc73d3e86b28f06508ae81b5e223ea98f90))
-* v0.3.2 — add POST /account/credit, fix GET /ws protocol docs (ENG-3226) ([6e0b1f3](https://github.com/nexus-xyz/nexus-exchange-api/commit/6e0b1f3f661472f42977e75a623439fee353cec7))
+* add POST /account/credit, fix GET /ws protocol docs (ENG-3226) ([d0681dc](https://github.com/nexus-xyz/nexus-exchange-api/commit/d0681dc73d3e86b28f06508ae81b5e223ea98f90))
 
 ## [0.3.2] — 2026-06-10
 
