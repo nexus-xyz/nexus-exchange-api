@@ -1,0 +1,14 @@
+# Style/quality linting for the OpenAPI spec (Redocly).
+# Spectral can't lint OpenAPI 3.1 (crashes), so we use Redocly.
+#
+# Philosophy: block on real structural validity; surface quality nits as
+# warnings (non-blocking) so the gate isn't noisy. Tighten over time.
+extends:
+  - recommended
+rules:
+  struct: error                 # structural validity (caught the 3.0 `nullable` in 3.1)
+  operation-operationId: warn   # useful for SDK codegen — add incrementally
+  security-defined: warn        # public endpoints (login/register/ws) — make `security: []` explicit later
+  operation-4xx-response: warn  # e.g. GET /health is 200-only
+  no-server-example.com: off    # localhost dev server is intentional
+  info-license: off             # no license field by choice (pre-1.0)

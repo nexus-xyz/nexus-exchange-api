@@ -1,0 +1,32 @@
+name: OpenAPI style
+
+# Style/quality linting via Redocly (Spectral can't parse OpenAPI 3.1).
+# Config + per-rule severities live in redocly.yaml. Blocks only on real
+# structural problems (`struct`); quality nits are warnings.
+
+on:
+  pull_request:
+    paths:
+      - 'openapi.json'
+      - 'redocly.yaml'
+      - '.github/workflows/openapi-style.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'openapi.json'
+      - 'redocly.yaml'
+
+permissions:
+  contents: read
+
+jobs:
+  redocly:
+    name: Redocly lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Redocly lint
+        run: npx -y @redocly/cli@2.32.2 lint openapi.json
