@@ -162,6 +162,7 @@
         ],
         "responses": {
           "200": {
+            "description": "The session's API keys.",
             "content": {
               "application/json": {
                 "example": [
@@ -352,6 +353,7 @@
         ],
         "responses": {
           "200": {
+            "description": "A minted WebSocket authentication token.",
             "content": {
               "application/json": {
                 "example": {
@@ -460,6 +462,7 @@
         ],
         "responses": {
           "200": {
+            "description": "Volume and price summaries for all markets.",
             "content": {
               "application/json": {
                 "schema": {
@@ -508,6 +511,7 @@
         ],
         "responses": {
           "200": {
+            "description": "Current ticker for the market.",
             "content": {
               "application/json": {
                 "schema": {
@@ -605,6 +609,7 @@
         ],
         "responses": {
           "200": {
+            "description": "Current order book for the market.",
             "content": {
               "application/json": {
                 "schema": {
@@ -681,6 +686,7 @@
         ],
         "responses": {
           "200": {
+            "description": "Recent trades for the market.",
             "content": {
               "application/json": {
                 "schema": {
@@ -760,6 +766,7 @@
         ],
         "responses": {
           "200": {
+            "description": "OHLCV candles for the market.",
             "content": {
               "application/json": {
                 "schema": {
@@ -843,6 +850,7 @@
         ],
         "responses": {
           "200": {
+            "description": "Funding rate history for the market.",
             "content": {
               "application/json": {
                 "schema": {
@@ -891,6 +899,7 @@
         ],
         "responses": {
           "200": {
+            "description": "Market status and halt information.",
             "content": {
               "application/json": {
                 "schema": {
@@ -939,6 +948,7 @@
         ],
         "responses": {
           "200": {
+            "description": "ADL settlement history for the market.",
             "content": {
               "application/json": {
                 "schema": {
@@ -993,6 +1003,7 @@
         ],
         "responses": {
           "200": {
+            "description": "ADL events touching the account.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1031,6 +1042,7 @@
         ],
         "responses": {
           "200": {
+            "description": "Current mark price for the market.",
             "content": {
               "application/json": {
                 "example": {
@@ -1116,6 +1128,7 @@
         ],
         "responses": {
           "200": {
+            "description": "The account's open orders.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1234,6 +1247,7 @@
         ],
         "responses": {
           "200": {
+            "description": "The requested order.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1301,6 +1315,7 @@
         ],
         "responses": {
           "200": {
+            "description": "Account summary for the authenticated caller.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1348,6 +1363,7 @@
         },
         "responses": {
           "200": {
+            "description": "The deposit result.",
             "content": {
               "application/json": {
                 "example": {
@@ -1451,6 +1467,7 @@
         ],
         "responses": {
           "200": {
+            "description": "Current rate-limit status for the caller.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1486,6 +1503,7 @@
         ],
         "responses": {
           "200": {
+            "description": "The account's open positions.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1691,6 +1709,7 @@
         },
         "responses": {
           "200": {
+            "description": "The updated account tier.",
             "content": {
               "application/json": {
                 "example": {
@@ -1718,6 +1737,7 @@
         ],
         "responses": {
           "200": {
+            "description": "The configured tier overrides.",
             "content": {
               "application/json": {
                 "example": [
@@ -1780,6 +1800,7 @@
         "description": "No authentication required. Used by Fly.io health checks and uptime monitors.",
         "responses": {
           "200": {
+            "description": "Service health status.",
             "content": {
               "application/json": {
                 "example": {
