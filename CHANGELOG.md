@@ -8,6 +8,14 @@ Pre-1.0 versioning convention:
 
 ---
 
+## [0.4.0](https://github.com/nexus-xyz/nexus-exchange-api/compare/v0.3.2...v0.4.0) (2026-06-15)
+
+
+### Features
+
+* v0.3.2 — add POST /account/credit, fix GET /ws protocol docs (ENG-3226) ([d0681dc](https://github.com/nexus-xyz/nexus-exchange-api/commit/d0681dc73d3e86b28f06508ae81b5e223ea98f90))
+* v0.3.2 — add POST /account/credit, fix GET /ws protocol docs (ENG-3226) ([6e0b1f3](https://github.com/nexus-xyz/nexus-exchange-api/commit/6e0b1f3f661472f42977e75a623439fee353cec7))
+
 ## [0.3.2] — 2026-06-10
 
 ### Added

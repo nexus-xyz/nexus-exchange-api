@@ -3,7 +3,7 @@
   "info": {
     "title": "Nexus Exchange API",
     "description": "Perpetual futures exchange with HMAC API key authentication, tiered rate limiting, and real-time WebSocket streaming across 32 markets.",
-    "version": "0.3.2"
+    "version": "0.4.0"
   },
   "servers": [
     {
@@ -122,7 +122,7 @@
           "Authentication"
         ],
         "summary": "Create an API key",
-        "description": "Create a new HMAC API key for the authenticated wallet. Returns the secret once \u2014 it is never stored or shown again. Requires a session token (Bearer) from POST /auth/login.",
+        "description": "Create a new HMAC API key for the authenticated wallet. Returns the secret once — it is never stored or shown again. Requires a session token (Bearer) from POST /auth/login.",
         "security": [
           {
             "bearerAuth": []
@@ -216,7 +216,7 @@
           "Agents"
         ],
         "summary": "Register an agent key",
-        "description": "Register a new agent key for your wallet. An agent is an Ethereum-derived keypair that can sign trading requests on your behalf without exposing your main wallet. The registration is authorized by an EIP-712 signature from the wallet that will own the agent \u2014 no session token required.\n\nEIP-712 domain: `{ name: 'NexusExchange', version: '1', chainId: <testnet chain id> }`.\nTyped data type: `RegisterAgent { address agent, uint256 expiresAt, uint256 nonce }`.",
+        "description": "Register a new agent key for your wallet. An agent is an Ethereum-derived keypair that can sign trading requests on your behalf without exposing your main wallet. The registration is authorized by an EIP-712 signature from the wallet that will own the agent — no session token required.\n\nEIP-712 domain: `{ name: 'NexusExchange', version: '1', chainId: <testnet chain id> }`.\nTyped data type: `RegisterAgent { address agent, uint256 expiresAt, uint256 nonce }`.",
         "requestBody": {
           "required": true,
           "content": {
@@ -250,10 +250,10 @@
             "description": "Bad request: bad_wallet, bad_agent, expiry_out_of_range [1 d, 90 d from now], or invalid_json"
           },
           "401": {
-            "description": "signature_invalid or signer_mismatch \u2014 the EIP-712 signature did not recover to the claimed wallet"
+            "description": "signature_invalid or signer_mismatch — the EIP-712 signature did not recover to the claimed wallet"
           },
           "409": {
-            "description": "duplicate_agent \u2014 the agent address is already registered to this wallet"
+            "description": "duplicate_agent — the agent address is already registered to this wallet"
           }
         }
       }
@@ -467,7 +467,7 @@
                 "example": [
                   {
                     "market_id": "BTC-USDX-PERP",
-                    "mark_price": 48850.0,
+                    "mark_price": 48850,
                     "volume_24h": 19530020.08,
                     "trade_count": 45230
                   }
@@ -513,19 +513,19 @@
                   "symbol": "BTC-USDX-PERP",
                   "timestamp": 1776033911836,
                   "datetime": "2026-04-12T22:45:11.836Z",
-                  "high": 50500.0,
-                  "low": 49200.0,
+                  "high": 50500,
+                  "low": 49200,
                   "bid": 50100.5,
                   "bidVolume": 1.4,
-                  "ask": 50102.0,
+                  "ask": 50102,
                   "askVolume": 0.8,
-                  "open": 49800.0,
-                  "close": 50100.0,
-                  "last": 50100.0,
-                  "change": 300.0,
+                  "open": 49800,
+                  "close": 50100,
+                  "last": 50100,
+                  "change": 300,
                   "percentage": 0.602,
                   "baseVolume": 1250.5,
-                  "quoteVolume": 62525000.0,
+                  "quoteVolume": 62525000,
                   "markPrice": 50101.5,
                   "indexPrice": null,
                   "info": {}
@@ -533,11 +533,11 @@
               }
             }
           },
-          "404": {
-            "description": "Market not found"
-          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "description": "Market not found"
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
@@ -614,13 +614,13 @@
                       1.4
                     ],
                     [
-                      50099.0,
+                      50099,
                       2.1
                     ]
                   ],
                   "asks": [
                     [
-                      50102.0,
+                      50102,
                       0.8
                     ],
                     [
@@ -635,11 +635,11 @@
               }
             }
           },
-          "404": {
-            "description": "Market not found"
-          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "description": "Market not found"
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
@@ -793,10 +793,10 @@
                 "example": [
                   [
                     1776033900000,
-                    48062.0,
-                    51903.0,
-                    44992.0,
-                    51903.0,
+                    48062,
+                    51903,
+                    44992,
+                    51903,
                     27.123
                   ]
                 ]
@@ -895,11 +895,11 @@
               }
             }
           },
-          "404": {
-            "description": "Market not found"
-          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "description": "Market not found"
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
@@ -1238,11 +1238,11 @@
               }
             }
           },
-          "404": {
-            "description": "Order not found"
-          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "description": "Order not found"
           }
         }
       },
@@ -1478,7 +1478,7 @@
           "Account"
         ],
         "summary": "List your fills",
-        "description": "Returns up to 1000 fills for the authenticated account, newest first. Fills are trade executions resulting from order matches \u2014 each fill carries the matched price, quantity, fee, and whether it was the taker or maker side.",
+        "description": "Returns up to 1000 fills for the authenticated account, newest first. Fills are trade executions resulting from order matches — each fill carries the matched price, quantity, fee, and whether it was the taker or maker side.",
         "security": [
           {
             "hmacAuth": []
@@ -1587,7 +1587,7 @@
           "WebSocket"
         ],
         "summary": "Per-account WebSocket stream",
-        "description": "WebSocket endpoint for both public market data and per-account private channels. Requires a token from POST /ws/token:\n```\nwss://host/ws?token=YOUR_TOKEN\n```\nTokens are single-use and expire after 60 seconds.\n\nEvery client\u2192server and server\u2192client message is a JSON envelope tagged with an `op` field. Subscribe to one channel per message:\n```json\n{\"op\": \"subscribe\", \"channel\": \"trades\", \"market\": \"BTC-USDX-PERP\"}\n{\"op\": \"subscribe\", \"channel\": \"fills\"}\n```\nUnsubscribe with `{\"op\": \"unsubscribe\", \"channel\": \"...\", \"market\": \"...\"}`.\n\n**Public channels** (the token is always required to upgrade): `trades`, `book`, `candles` \u2014 each requires a `market` field.\n\n**Per-account channels** (scoped to the wallet that minted the token): `orders`, `fills`, `positions`, `balances`.\n\n**Server messages:**\n- `{\"op\": \"subscribed\", \"channel\": \"fills\", \"market\": null, \"seq_at_join\": 42}` \u2014 subscribe ack; `seq_at_join` is the channel's current sequence at attach time, used as the reconnect cursor.\n- `{\"op\": \"unsubscribed\", \"channel\": \"fills\", \"market\": null}` \u2014 unsubscribe ack.\n- `{\"op\": \"event\", \"channel\": \"fills\", \"market\": null, \"seq\": 43, \"payload\": {...}}` \u2014 a delivered event; `seq` is monotonic per channel.\n- `{\"op\": \"out_of_sync\", \"channel\": \"fills\", \"market\": null, \"oldest_seq\": 100}` \u2014 the requested `since` cursor fell behind the replay buffer; refetch state over REST and resubscribe with a fresh cursor.\n- `{\"op\": \"error\", \"message\": \"...\"}` \u2014 invalid op, unknown channel, or bad message format.\n\n**Reconnection:** tokens are single-use \u2014 mint a new one via POST /ws/token before reconnecting. To resume a channel without gaps, pass the last `seq` you received:\n```json\n{\"op\": \"subscribe\", \"channel\": \"fills\", \"since\": 42}\n```",
+        "description": "WebSocket endpoint for both public market data and per-account private channels. Requires a token from POST /ws/token:\n```\nwss://host/ws?token=YOUR_TOKEN\n```\nTokens are single-use and expire after 60 seconds.\n\nEvery client→server and server→client message is a JSON envelope tagged with an `op` field. Subscribe to one channel per message:\n```json\n{\"op\": \"subscribe\", \"channel\": \"trades\", \"market\": \"BTC-USDX-PERP\"}\n{\"op\": \"subscribe\", \"channel\": \"fills\"}\n```\nUnsubscribe with `{\"op\": \"unsubscribe\", \"channel\": \"...\", \"market\": \"...\"}`.\n\n**Public channels** (the token is always required to upgrade): `trades`, `book`, `candles` — each requires a `market` field.\n\n**Per-account channels** (scoped to the wallet that minted the token): `orders`, `fills`, `positions`, `balances`.\n\n**Server messages:**\n- `{\"op\": \"subscribed\", \"channel\": \"fills\", \"market\": null, \"seq_at_join\": 42}` — subscribe ack; `seq_at_join` is the channel's current sequence at attach time, used as the reconnect cursor.\n- `{\"op\": \"unsubscribed\", \"channel\": \"fills\", \"market\": null}` — unsubscribe ack.\n- `{\"op\": \"event\", \"channel\": \"fills\", \"market\": null, \"seq\": 43, \"payload\": {...}}` — a delivered event; `seq` is monotonic per channel.\n- `{\"op\": \"out_of_sync\", \"channel\": \"fills\", \"market\": null, \"oldest_seq\": 100}` — the requested `since` cursor fell behind the replay buffer; refetch state over REST and resubscribe with a fresh cursor.\n- `{\"op\": \"error\", \"message\": \"...\"}` — invalid op, unknown channel, or bad message format.\n\n**Reconnection:** tokens are single-use — mint a new one via POST /ws/token before reconnecting. To resume a channel without gaps, pass the last `seq` you received:\n```json\n{\"op\": \"subscribe\", \"channel\": \"fills\", \"since\": 42}\n```",
         "parameters": [
           {
             "name": "token",
@@ -1982,7 +1982,7 @@
       },
       "AdlEventRecord": {
         "type": "object",
-        "description": "Single ADL settlement (insurance fund depleted \u2192 counterparty closures). v0.21.",
+        "description": "Single ADL settlement (insurance fund depleted → counterparty closures). v0.21.",
         "properties": {
           "market_id": {
             "type": "string"
@@ -2393,7 +2393,7 @@
           },
           "expires_at": {
             "type": "integer",
-            "description": "Expiry as Unix ms. Optional \u2014 defaults to now+30d. Must be in [now+1d, now+90d]."
+            "description": "Expiry as Unix ms. Optional — defaults to now+30d. Must be in [now+1d, now+90d]."
           },
           "nonce": {
             "type": "integer",
