@@ -8,6 +8,13 @@ Pre-1.0 versioning convention:
 
 ---
 
+## [0.3.5](https://github.com/nexus-xyz/nexus-exchange-api/compare/v0.3.4...v0.3.5) (2026-06-16)
+
+
+### Features
+
+* type scalar schemas and add operationIds for SDK codegen ([#17](https://github.com/nexus-xyz/nexus-exchange-api/issues/17)) ([c145733](https://github.com/nexus-xyz/nexus-exchange-api/commit/c14573374e4110016765f96de880fc425256c8ea))
+
 ## [0.3.4](https://github.com/nexus-xyz/nexus-exchange-api/compare/v0.3.3...v0.3.4) (2026-06-16)
 
 
