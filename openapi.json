@@ -3,7 +3,7 @@
   "info": {
     "title": "Nexus Exchange API",
     "description": "Perpetual futures exchange with HMAC API key authentication, tiered rate limiting, and real-time WebSocket streaming across 32 markets.",
-    "version": "0.3.4"
+    "version": "0.3.5"
   },
   "servers": [
     {
