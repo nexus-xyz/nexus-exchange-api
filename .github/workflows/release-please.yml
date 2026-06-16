@@ -6,12 +6,8 @@ name: release-please
 # type carries the intent (feat: / fix: -> patch, feat! or BREAKING CHANGE
 # -> minor, pre-1.0). release-please accumulates them into a running release
 # PR. Merging that release PR is the deliberate, batched release: it bumps
-# openapi.json's info.version, updates CHANGELOG.md, tags vX.Y.Z, and cuts a
-# GitHub Release.
-#
-# Decoupling merge from release means a bad spec merge can be reverted before
-# it is ever published — consumers (monorepo, SDK) only ever vendor tagged
-# releases, never main.
+# openapi.json's info.version, updates CHANGELOG.md, tags vX.Y.Z, cuts a
+# GitHub Release, and attaches openapi.json as a release asset.
 
 on:
   push:
@@ -34,6 +30,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: googleapis/release-please-action@v4
+        id: release
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+      # Attach openapi.json as a downloadable release asset. Consumers (SDK,
+      # external integrators) pull the spec from the release rather than
+      # vendoring it, so GitHub's asset download_count gives us an adoption
+      # signal. Only runs when a release was just created.
+      - if: ${{ steps.release.outputs.release_created }}
+        uses: actions/checkout@v4
+      - if: ${{ steps.release.outputs.release_created }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${{ steps.release.outputs.tag_name }}" openapi.json --clobber
