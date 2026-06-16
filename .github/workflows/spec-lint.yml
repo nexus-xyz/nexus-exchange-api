@@ -1,0 +1,32 @@
+name: Spec Lint
+
+# Lints openapi.json with Redocly to lock in structural validity and the
+# operationId guarantees code generators depend on (present + unique). Runs on
+# any change to the spec or the lint config.
+
+on:
+  pull_request:
+    paths:
+      - 'openapi.json'
+      - 'redocly.yaml'
+      - '.github/workflows/spec-lint.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'openapi.json'
+      - 'redocly.yaml'
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: redocly lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Lint OpenAPI spec
+        run: npx -y @redocly/cli@2 lint openapi.json
