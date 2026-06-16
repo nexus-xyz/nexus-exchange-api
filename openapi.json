@@ -80,6 +80,7 @@
   "paths": {
     "/auth/login": {
       "post": {
+        "operationId": "login",
         "tags": [
           "Authentication"
         ],
@@ -122,6 +123,7 @@
     },
     "/keys": {
       "post": {
+        "operationId": "createApiKey",
         "tags": [
           "Authentication"
         ],
@@ -150,6 +152,7 @@
         }
       },
       "get": {
+        "operationId": "listApiKeys",
         "tags": [
           "Authentication"
         ],
@@ -182,6 +185,7 @@
     },
     "/keys/{key_id}": {
       "delete": {
+        "operationId": "deleteApiKey",
         "tags": [
           "Authentication"
         ],
@@ -217,6 +221,7 @@
     },
     "/agents/register": {
       "post": {
+        "operationId": "registerAgent",
         "tags": [
           "Agents"
         ],
@@ -265,6 +270,7 @@
     },
     "/agents": {
       "get": {
+        "operationId": "listAgents",
         "tags": [
           "Agents"
         ],
@@ -305,6 +311,7 @@
     },
     "/agents/{address}": {
       "delete": {
+        "operationId": "revokeAgent",
         "tags": [
           "Agents"
         ],
@@ -341,6 +348,7 @@
     },
     "/ws-tokens": {
       "post": {
+        "operationId": "createWsToken",
         "tags": [
           "WebSocket"
         ],
@@ -370,6 +378,7 @@
     },
     "/ws/token": {
       "post": {
+        "operationId": "createWsTokenLegacy",
         "tags": [
           "WebSocket"
         ],
@@ -450,6 +459,7 @@
     },
     "/markets/summary": {
       "get": {
+        "operationId": "fetchMarketsSummary",
         "tags": [
           "Markets"
         ],
@@ -825,6 +835,7 @@
     },
     "/markets/{market_id}/funding": {
       "get": {
+        "operationId": "fetchFunding",
         "tags": [
           "Funding"
         ],
@@ -882,6 +893,7 @@
     },
     "/markets/{market_id}/status": {
       "get": {
+        "operationId": "fetchMarketStatus",
         "tags": [
           "Markets"
         ],
@@ -922,6 +934,7 @@
     },
     "/markets/{market_id}/adl-events": {
       "get": {
+        "operationId": "fetchAdlEvents",
         "tags": [
           "Markets"
         ],
@@ -971,6 +984,7 @@
     },
     "/account/{address}/adl-history": {
       "get": {
+        "operationId": "fetchAdlHistory",
         "tags": [
           "Account"
         ],
@@ -1026,6 +1040,7 @@
     },
     "/markets/{market_id}/mark-price": {
       "get": {
+        "operationId": "fetchMarkPrice",
         "tags": [
           "Markets"
         ],
@@ -1185,6 +1200,7 @@
     },
     "/orders/batch": {
       "post": {
+        "operationId": "createOrdersBatch",
         "tags": [
           "Trading"
         ],
@@ -1342,6 +1358,7 @@
     },
     "/account/deposit": {
       "post": {
+        "operationId": "deposit",
         "tags": [
           "Account"
         ],
@@ -1383,6 +1400,7 @@
     },
     "/account/credit": {
       "post": {
+        "operationId": "credit",
         "tags": [
           "Account"
         ],
@@ -1537,6 +1555,7 @@
     },
     "/fills": {
       "get": {
+        "operationId": "fetchFills",
         "tags": [
           "Account"
         ],
@@ -1599,6 +1618,7 @@
     },
     "/withdrawals": {
       "get": {
+        "operationId": "fetchWithdrawals",
         "tags": [
           "Account"
         ],
@@ -1646,6 +1666,7 @@
     },
     "/ws": {
       "get": {
+        "operationId": "connectWebSocket",
         "tags": [
           "WebSocket"
         ],
@@ -1661,11 +1682,17 @@
             },
             "description": "Short-lived token from POST /ws/token"
           }
-        ]
+        ],
+        "responses": {
+          "101": {
+            "description": "Switching Protocols — WebSocket upgrade."
+          }
+        }
       }
     },
     "/stream": {
       "get": {
+        "operationId": "connectStream",
         "tags": [
           "WebSocket"
         ],
@@ -1681,11 +1708,17 @@
             },
             "description": "Short-lived token from POST /ws-tokens"
           }
-        ]
+        ],
+        "responses": {
+          "101": {
+            "description": "Switching Protocols — WebSocket upgrade."
+          }
+        }
       }
     },
     "/admin/tiers": {
       "put": {
+        "operationId": "setTier",
         "tags": [
           "Admin"
         ],
@@ -1725,6 +1758,7 @@
         }
       },
       "get": {
+        "operationId": "listTiers",
         "tags": [
           "Admin"
         ],
@@ -1757,6 +1791,7 @@
     },
     "/admin/tiers/{address}": {
       "delete": {
+        "operationId": "deleteTier",
         "tags": [
           "Admin"
         ],
@@ -1793,6 +1828,7 @@
     },
     "/health": {
       "get": {
+        "operationId": "health",
         "tags": [
           "Markets"
         ],
@@ -1940,22 +1976,22 @@
             "type": "string"
           },
           "tick_size": {
-            "type": "string"
+            "$ref": "#/components/schemas/Decimal"
           },
           "lot_size": {
-            "type": "string"
+            "$ref": "#/components/schemas/Decimal"
           },
           "min_order_size": {
-            "type": "string"
+            "$ref": "#/components/schemas/Decimal"
           },
           "max_order_size": {
-            "type": "string"
+            "$ref": "#/components/schemas/Decimal"
           },
           "initial_margin_rate": {
-            "type": "string"
+            "$ref": "#/components/schemas/Decimal"
           },
           "maintenance_margin_rate": {
-            "type": "string"
+            "$ref": "#/components/schemas/Decimal"
           },
           "max_leverage": {
             "type": "integer"
@@ -2047,11 +2083,11 @@
             "description": "0x-prefixed address of the counterparty whose position was closed"
           },
           "position_closed": {
-            "type": "string",
+            "$ref": "#/components/schemas/Decimal",
             "description": "Decimal quantity closed"
           },
           "settlement_amount": {
-            "type": "string",
+            "$ref": "#/components/schemas/Decimal",
             "description": "Decimal amount charged to the counterparty"
           }
         }
@@ -2068,10 +2104,10 @@
             "description": "0x-prefixed bankrupt account"
           },
           "bankruptcy_price": {
-            "type": "string"
+            "$ref": "#/components/schemas/Decimal"
           },
           "bad_debt_absorbed_by_fund": {
-            "type": "string"
+            "$ref": "#/components/schemas/Decimal"
           },
           "counterparty_closures": {
             "type": "array",
@@ -2084,7 +2120,7 @@
             "description": "Engine event sequence number"
           },
           "timestamp": {
-            "type": "integer",
+            "$ref": "#/components/schemas/TimestampMs",
             "description": "Unix ms"
           }
         }
@@ -2097,7 +2133,7 @@
             "type": "string"
           },
           "timestamp": {
-            "type": "integer",
+            "$ref": "#/components/schemas/TimestampMs",
             "description": "Unix ms"
           },
           "datetime": {
@@ -2235,7 +2271,7 @@
             }
           },
           "timestamp": {
-            "type": "integer"
+            "$ref": "#/components/schemas/TimestampMs"
           },
           "datetime": {
             "type": "string",
@@ -2274,7 +2310,7 @@
             ]
           },
           "timestamp": {
-            "type": "integer"
+            "$ref": "#/components/schemas/TimestampMs"
           },
           "datetime": {
             "type": "string",
@@ -2298,19 +2334,19 @@
         "type": "object",
         "properties": {
           "timestamp": {
-            "type": "integer"
+            "$ref": "#/components/schemas/TimestampMs"
           },
           "funding_rate": {
-            "type": "string"
+            "$ref": "#/components/schemas/Decimal"
           },
           "premium_index": {
-            "type": "string"
+            "$ref": "#/components/schemas/Decimal"
           },
           "mark_price": {
-            "type": "string"
+            "$ref": "#/components/schemas/Decimal"
           },
           "oracle_price": {
-            "type": "string"
+            "$ref": "#/components/schemas/Decimal"
           }
         }
       },
@@ -2342,11 +2378,11 @@
             ]
           },
           "price": {
-            "type": "string",
+            "$ref": "#/components/schemas/Decimal",
             "description": "Required for Limit orders"
           },
           "quantity": {
-            "type": "string"
+            "$ref": "#/components/schemas/Decimal"
           },
           "time_in_force": {
             "type": "string",
@@ -2399,13 +2435,13 @@
             "type": "string"
           },
           "price": {
-            "type": "string"
+            "$ref": "#/components/schemas/Decimal"
           },
           "quantity": {
-            "type": "string"
+            "$ref": "#/components/schemas/Decimal"
           },
           "filled_qty": {
-            "type": "string"
+            "$ref": "#/components/schemas/Decimal"
           },
           "status": {
             "type": "string",
@@ -2422,10 +2458,10 @@
             "type": "string"
           },
           "created_at": {
-            "type": "integer"
+            "$ref": "#/components/schemas/TimestampMs"
           },
           "updated_at": {
-            "type": "integer"
+            "$ref": "#/components/schemas/TimestampMs"
           }
         }
       },
@@ -2433,16 +2469,16 @@
         "type": "object",
         "properties": {
           "balance": {
-            "type": "string"
+            "$ref": "#/components/schemas/Decimal"
           },
           "collateral": {
-            "type": "string"
+            "$ref": "#/components/schemas/Decimal"
           },
           "equity": {
-            "type": "string"
+            "$ref": "#/components/schemas/Decimal"
           },
           "available_margin": {
-            "type": "string"
+            "$ref": "#/components/schemas/Decimal"
           },
           "positions": {
             "type": "array",
@@ -2456,7 +2492,7 @@
         "type": "object",
         "properties": {
           "amount": {
-            "type": "string",
+            "$ref": "#/components/schemas/Decimal",
             "description": "Synthetic USDX to credit (decimal string). Omit to claim the full remaining daily allowance."
           }
         }
@@ -2470,15 +2506,15 @@
         ],
         "properties": {
           "amount": {
-            "type": "string",
+            "$ref": "#/components/schemas/Decimal",
             "description": "USDX credited by this request (decimal string)."
           },
           "credited_today": {
-            "type": "string",
+            "$ref": "#/components/schemas/Decimal",
             "description": "Total USDX credited to this API key so far today (decimal string)."
           },
           "daily_limit": {
-            "type": "string",
+            "$ref": "#/components/schemas/Decimal",
             "description": "Per-API-key daily credit allowance in USDX (decimal string)."
           }
         }
@@ -2533,19 +2569,19 @@
             ]
           },
           "size": {
-            "type": "string"
+            "$ref": "#/components/schemas/Decimal"
           },
           "entry_price": {
-            "type": "string"
+            "$ref": "#/components/schemas/Decimal"
           },
           "unrealized_pnl": {
-            "type": "string"
+            "$ref": "#/components/schemas/Decimal"
           },
           "realized_pnl": {
-            "type": "string"
+            "$ref": "#/components/schemas/Decimal"
           },
           "liquidation_price": {
-            "type": "string"
+            "$ref": "#/components/schemas/Decimal"
           }
         }
       },
@@ -2592,11 +2628,11 @@
             "description": "Agent address (0x-prefixed)"
           },
           "expiresAt": {
-            "type": "integer",
+            "$ref": "#/components/schemas/TimestampMs",
             "description": "Expiry Unix ms"
           },
           "registeredAt": {
-            "type": "integer",
+            "$ref": "#/components/schemas/TimestampMs",
             "description": "Registration time Unix ms"
           },
           "label": {
@@ -2633,15 +2669,15 @@
             ]
           },
           "price": {
-            "type": "string",
+            "$ref": "#/components/schemas/Decimal",
             "description": "Executed price (decimal string)"
           },
           "size": {
-            "type": "string",
+            "$ref": "#/components/schemas/Decimal",
             "description": "Executed quantity (decimal string)"
           },
           "fee": {
-            "type": "string",
+            "$ref": "#/components/schemas/Decimal",
             "description": "Fee charged in USDX (decimal string)"
           },
           "taker_or_maker": {
@@ -2652,13 +2688,22 @@
             ]
           },
           "timestamp": {
-            "type": "integer",
+            "$ref": "#/components/schemas/TimestampMs",
             "description": "Unix ms"
           },
           "is_liquidation": {
             "type": "boolean"
           }
         }
+      },
+      "Decimal": {
+        "type": "string",
+        "description": "Arbitrary-precision decimal serialized as a string (lossless). Parse with a decimal type, never a float."
+      },
+      "TimestampMs": {
+        "type": "integer",
+        "format": "int64",
+        "description": "Unix epoch timestamp in milliseconds."
       }
     }
   }

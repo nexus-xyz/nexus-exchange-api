@@ -1,0 +1,11 @@
+# Spec-lint config. Intentionally tight: structural validity plus the
+# operationId guarantees that code generation relies on. Stylistic/governance
+# rules stay off (minimal ruleset) so this gate only fails on real problems.
+extends:
+  - minimal
+rules:
+  struct: error                        # OpenAPI structural validity
+  operation-operationId: error         # every operation must have an operationId
+  operation-operationId-unique: error  # operationIds must be unique
+  security-defined: off                # not enforcing per-op security docs here
+  operation-2xx-response: off          # /ws and /stream are 101-only upgrades
