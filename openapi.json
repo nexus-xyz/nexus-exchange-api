@@ -1647,6 +1647,12 @@
             "description": "Array of withdrawal records",
             "content": {
               "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Withdrawal"
+                  }
+                },
                 "example": [
                   {
                     "id": "wd_a1b2c3d4e5f6",
@@ -2035,6 +2041,7 @@
               "integer",
               "null"
             ],
+            "format": "int64",
             "description": "Unix ms timestamp when market was halted"
           },
           "adl_event_count": {
@@ -2067,7 +2074,8 @@
             "type": [
               "integer",
               "null"
-            ]
+            ],
+            "format": "int64"
           },
           "adl_event_count": {
             "type": "integer"
@@ -2278,7 +2286,8 @@
             "format": "date-time"
           },
           "nonce": {
-            "type": "integer"
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
@@ -2406,7 +2415,7 @@
           "fills": {
             "type": "array",
             "items": {
-              "type": "object"
+              "$ref": "#/components/schemas/Fill"
             }
           }
         }
@@ -2604,10 +2613,12 @@
           },
           "expires_at": {
             "type": "integer",
+            "format": "int64",
             "description": "Expiry as Unix ms. Optional — defaults to now+30d. Must be in [now+1d, now+90d]."
           },
           "nonce": {
             "type": "integer",
+            "format": "int64",
             "description": "Monotonic nonce. Use the current Unix timestamp in ms as a safe starting value."
           },
           "signature": {
@@ -2693,6 +2704,33 @@
           },
           "is_liquidation": {
             "type": "boolean"
+          }
+        }
+      },
+      "Withdrawal": {
+        "type": "object",
+        "description": "A single withdrawal record for the authenticated account",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Withdrawal ID"
+          },
+          "amount": {
+            "$ref": "#/components/schemas/Decimal",
+            "description": "Withdrawn amount in USDX (decimal string)"
+          },
+          "timestamp": {
+            "$ref": "#/components/schemas/TimestampMs",
+            "description": "Unix ms"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "settled",
+              "failed"
+            ],
+            "description": "Withdrawal lifecycle status"
           }
         }
       },
