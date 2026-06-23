@@ -8,6 +8,17 @@ Pre-1.0 versioning convention:
 
 ---
 
+## [0.4.0](https://github.com/nexus-xyz/nexus-exchange-api/compare/v0.3.5...v0.4.0) (2026-06-23)
+
+
+### ⚠ BREAKING CHANGES
+
+* **markets:** /markets/summary responses use `last_trade_price` instead of `mark_price`; clients reading `mark_price` will now get undefined.
+
+### Features
+
+* **markets:** rename MarketSummary.mark_price → last_trade_price ([#20](https://github.com/nexus-xyz/nexus-exchange-api/issues/20)) ([058e336](https://github.com/nexus-xyz/nexus-exchange-api/commit/058e33634103290453c807caf8743794013c9c7e))
+
 ## [0.3.5](https://github.com/nexus-xyz/nexus-exchange-api/compare/v0.3.4...v0.3.5) (2026-06-16)
 
 
