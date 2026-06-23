@@ -463,8 +463,8 @@
         "tags": [
           "Markets"
         ],
-        "summary": "Returns last trade price, 24h volume, and trade count for all markets.",
-        "description": "Returns mark price, 24h volume, and trade count for all markets.",
+        "summary": "Market summaries with volume",
+        "description": "Returns last trade price, 24h volume, and trade count for all markets.",
         "security": [
           {
             "hmacAuth": []
