@@ -2710,6 +2710,12 @@
       "Withdrawal": {
         "type": "object",
         "description": "A single withdrawal record for the authenticated account",
+        "required": [
+          "id",
+          "amount",
+          "timestamp",
+          "status"
+        ],
         "properties": {
           "id": {
             "type": "string",
