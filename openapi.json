@@ -463,7 +463,7 @@
         "tags": [
           "Markets"
         ],
-        "summary": "Market summaries with volume",
+        "summary": "Returns last trade price, 24h volume, and trade count for all markets.",
         "description": "Returns mark price, 24h volume, and trade count for all markets.",
         "security": [
           {
@@ -484,7 +484,7 @@
                 "example": [
                   {
                     "market_id": "BTC-USDX-PERP",
-                    "mark_price": 48850,
+                    "last_trade_price": 48850,
                     "volume_24h": 19530020.08,
                     "trade_count": 45230
                   }
@@ -2004,11 +2004,12 @@
           "market_id": {
             "type": "string"
           },
-          "mark_price": {
+          "last_trade_price": {
             "type": [
               "number",
               "null"
-            ]
+            ],
+            "description": "Last trade price (\"what the market is trading at\"). NOT the mark; the engine-derived mark is exposed separately."
           },
           "volume_24h": {
             "type": "number"
@@ -2222,7 +2223,8 @@
             "type": [
               "number",
               "null"
-            ]
+            ],
+            "description": "Engine-derived mark price (oracle + premium-index), falling back to the last trade until the first mark-price poll lands. The raw last trade is carried by `last`."
           },
           "indexPrice": {
             "type": [
