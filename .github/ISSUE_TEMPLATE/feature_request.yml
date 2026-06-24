@@ -1,0 +1,60 @@
+name: API change proposal
+description: Propose a new endpoint, field, or schema change for the spec.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have a proposal for the API surface? This repo defines the spec
+        (`openapi.json`); released versions are consumed by the downstream
+        SDKs, so additive, optional changes are easiest to land. See
+        [CONTRIBUTING.md](../../CONTRIBUTING.md) for the breaking-change policy.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / use case
+      description: What can't you express against the API today?
+    validations:
+      required: true
+  - type: dropdown
+    id: change-type
+    attributes:
+      label: Kind of change
+      options:
+        - New endpoint
+        - New field on an existing schema
+        - New parameter
+        - Change to an existing endpoint / field
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed spec change
+      description: >-
+        Sketch the endpoint, field, or schema. An OpenAPI fragment or example
+        request/response is ideal.
+      render: yaml
+    validations:
+      required: false
+  - type: dropdown
+    id: compatibility
+    attributes:
+      label: Backwards compatibility
+      description: >-
+        Additive/optional changes are non-breaking. Removals, renames, type
+        changes, and new required parameters are breaking (a minor bump
+        pre-1.0).
+      options:
+        - Additive / optional (non-breaking)
+        - Breaking (removal, rename, new required param)
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: false

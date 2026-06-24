@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security disclosure
+    url: https://github.com/nexus-xyz/nexus-exchange-api/security/advisories/new
+    about: Report security vulnerabilities privately — please do not open a public issue.
+  - name: Rust SDK bug
+    url: https://github.com/nexus-xyz/nexus-exchange-rs/issues/new/choose
+    about: Bugs in the Rust SDK (not the API spec) belong in the -rs repo.
+  - name: Python SDK bug
+    url: https://github.com/nexus-xyz/nexus-exchange-py/issues/new/choose
+    about: Bugs in the Python SDK (not the API spec) belong in the -py repo.
+  - name: MCP server bug
+    url: https://github.com/nexus-xyz/nexus-exchange-mcp/issues/new/choose
+    about: Bugs in the MCP server (not the API spec) belong in the -mcp repo.
