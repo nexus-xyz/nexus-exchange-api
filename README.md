@@ -1,6 +1,7 @@
 # Nexus Exchange API
 
 [![API Version](https://img.shields.io/github/v/release/nexus-xyz/nexus-exchange-api?label=api)](https://github.com/nexus-xyz/nexus-exchange-api/releases)
+[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](#license)
 
 REST and WebSocket API for [Nexus Exchange](https://exchange.nexus.xyz) — a perpetual futures exchange for crypto, equities, FX, and commodities.
 
@@ -123,3 +124,8 @@ Rate limit headers: `x-ratelimit-limit`, `x-ratelimit-remaining`. Exceeded → `
 ## Markets
 
 32 perpetual futures markets including BTC, ETH, SOL, and traditional assets (GOLD, SPX, NDQ, EUR, GBP, JPY). Full list: `GET /markets/summary`.
+
+## License
+
+Dual-licensed under [MIT](./LICENSE-MIT) or [Apache-2.0](./LICENSE-APACHE), at
+your option — same as the Nexus Exchange SDKs.
