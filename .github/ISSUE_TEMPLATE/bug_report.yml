@@ -1,0 +1,55 @@
+name: Spec inaccuracy
+description: Report where openapi.json disagrees with the actual API behavior.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report! This repo is the **API spec** (`openapi.json`),
+        not an SDK. Use this template when the spec is wrong — a field, type,
+        endpoint, or status code that doesn't match how the live API actually
+        behaves. Please search existing issues first to avoid duplicates.
+  - type: input
+    id: endpoint
+    attributes:
+      label: Endpoint / field
+      description: The operation, path, or schema field the spec gets wrong.
+      placeholder: "POST /orders — `quantity` field"
+    validations:
+      required: true
+  - type: textarea
+    id: spec-says
+    attributes:
+      label: What the spec says
+      description: Quote or describe what openapi.json currently documents.
+      placeholder: "`quantity` is typed as `number`."
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual API behavior
+      description: What the live API actually does, and how you observed it.
+      placeholder: "The API rejects numbers and requires a decimal string, e.g. `\"0.01\"`."
+    validations:
+      required: true
+  - type: input
+    id: spec-version
+    attributes:
+      label: Spec version
+      description: >-
+        Value of `$.info.version` in openapi.json, or the release tag you're
+        looking at.
+      placeholder: "0.4.0 (or v0.4.0)"
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: >-
+        A request/response pair (curl is great) that demonstrates the mismatch.
+        Redact any secrets, tokens, or signatures.
+      render: text
+    validations:
+      required: false
