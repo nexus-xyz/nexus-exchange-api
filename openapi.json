@@ -1314,6 +1314,75 @@
             "description": "Order not found"
           }
         }
+      },
+      "patch": {
+        "tags": [
+          "Trading"
+        ],
+        "summary": "Amend an order",
+        "description": "Amend an open order in place (atomic server-side cancel-replace). At least one of `price` or `size` MUST be present; an empty body is rejected. The `market_id` query parameter is required to route the request to the owning market.",
+        "operationId": "editOrder",
+        "x-ccxt-method": "editOrder",
+        "security": [
+          {
+            "hmacAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "market_id",
+            "in": "query",
+            "required": true,
+            "description": "Market the order belongs to, e.g. BTC-USDX-PERP.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AmendOrderRequest"
+              },
+              "example": {
+                "price": "50100",
+                "size": "0.2"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The amended order.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid amend (e.g. empty body, or no field would change)"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "description": "Order not found"
+          }
+        }
       }
     },
     "/account": {
@@ -2405,6 +2474,21 @@
           },
           "reduce_only": {
             "type": "boolean"
+          }
+        }
+      },
+      "AmendOrderRequest": {
+        "type": "object",
+        "description": "Fields to change on an existing order. At least one property MUST be present; an empty body is rejected server-side. Unset fields are left unchanged on the order.",
+        "minProperties": 1,
+        "properties": {
+          "price": {
+            "$ref": "#/components/schemas/Decimal",
+            "description": "New limit price, if changing it."
+          },
+          "size": {
+            "$ref": "#/components/schemas/Decimal",
+            "description": "New order size, if changing it."
           }
         }
       },
