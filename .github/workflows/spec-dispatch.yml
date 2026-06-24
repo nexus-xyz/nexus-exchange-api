@@ -1,0 +1,68 @@
+name: Notify SDKs of spec release
+
+# When this repo cuts a release (release-please merges the release PR, which
+# tags vX.Y.Z, cuts a GitHub Release, and attaches openapi.json), fan out a
+# `repository_dispatch` to every downstream SDK so each can auto-pick-up the
+# new spec when it's NON-BREAKING (oasdiff-gated in the SDK) and route breaking
+# changes to a human. See ENG-3563 for the full design.
+#
+# Each target's `spec-autobump.yml` handles the `spec-released` event type and
+# reads `client_payload.tag` to know which release to evaluate. Targets also run
+# a daily scheduled poll as a fallback, so a dropped dispatch self-heals within
+# a day — this dispatch is the fast path, not the only path.
+#
+# Auth: `secrets.SDK_DISPATCH_TOKEN` is a scoped token with `contents: write`
+# (or the dispatch permission) on the target repos, provisioned by ENG-4149.
+# The default GITHUB_TOKEN cannot dispatch to other repositories.
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: spec-dispatch-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    strategy:
+      # One target failing (e.g. token not yet scoped to it) must not block the
+      # others; the daily poll fallback in each SDK covers a missed dispatch.
+      fail-fast: false
+      matrix:
+        target:
+          - nexus-xyz/nexus-exchange-rs
+          # TODO(ENG-3563): enable once each repo has landed `spec-autobump.yml`
+          # (replicate the reference from nexus-exchange-rs first — see that
+          # repo's docs/spec-autobump-replication.md):
+          #   - nexus-xyz/nexus-exchange-py
+          #   - nexus-xyz/nexus-exchange-cli
+          #   - nexus-xyz/nexus-exchange-mcp
+          # And the monorepo re-vendor leg (different handler — runs
+          # eng/apps/exchange/scripts/bump-api-spec.sh <tag>):
+          #   - nexus-xyz/nexus
+    steps:
+      - name: Dispatch spec-released to ${{ matrix.target }}
+        env:
+          GH_TOKEN: ${{ secrets.SDK_DISPATCH_TOKEN }}
+          TARGET: ${{ matrix.target }}
+          # Passed via env (not interpolated into the script body) so the tag is
+          # data, not code. release tag_name is repo-controlled, but keep the
+          # habit consistent with the rest of the pipeline.
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "::error::SDK_DISPATCH_TOKEN is not set. It is provisioned by ENG-4149;" \
+                 "the workflow cannot dispatch to ${TARGET} without it."
+            exit 1
+          fi
+          echo "Dispatching spec-released (tag=${TAG}) to ${TARGET}"
+          gh api "repos/${TARGET}/dispatches" \
+            --method POST \
+            -f event_type="spec-released" \
+            -F "client_payload[tag]=${TAG}"
