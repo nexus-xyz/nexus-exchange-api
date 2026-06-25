@@ -8,6 +8,20 @@ Pre-1.0 versioning convention:
 
 ---
 
+## [0.5.0](https://github.com/nexus-xyz/nexus-exchange-api/compare/v0.4.0...v0.5.0) (2026-06-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* adding `format: int64` to the halted_at, expires_at, and nonce integer fields is classified as a type/format change by oasdiff. This is a deliberate, value-safe tightening (the fields always carried ms-epoch values); no wire-format change. Minor version bump per the api-diff workflow.
+
+### Features
+
+* add PATCH /orders/{order_id} (amend) to spec ([#24](https://github.com/nexus-xyz/nexus-exchange-api/issues/24)) ([0679217](https://github.com/nexus-xyz/nexus-exchange-api/commit/067921769d42d7f68addc4172bc822b0bcc64f42))
+* pin POST /orders/batch per-order result schema (ENG-4199) ([#32](https://github.com/nexus-xyz/nexus-exchange-api/issues/32)) ([8eca98f](https://github.com/nexus-xyz/nexus-exchange-api/commit/8eca98ffecc1c0a811a7d25a57976807bbf19486))
+* reconcile spec with live indexer routes (ENG-3821, ENG-3822, ENG-3823) ([#30](https://github.com/nexus-xyz/nexus-exchange-api/issues/30)) ([784f23b](https://github.com/nexus-xyz/nexus-exchange-api/commit/784f23b9618a30994ec0eaa3bba8c66a338a92d1))
+* type weak schemas before SDK codegen (ENG-3543) ([#19](https://github.com/nexus-xyz/nexus-exchange-api/issues/19)) ([701201b](https://github.com/nexus-xyz/nexus-exchange-api/commit/701201bddb7a64497438e192f70d735e78e09dbb))
+
 ## [0.4.0](https://github.com/nexus-xyz/nexus-exchange-api/compare/v0.3.5...v0.4.0) (2026-06-23)
 
 
