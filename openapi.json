@@ -1076,6 +1076,53 @@
         }
       }
     },
+    "/markets/{market_id}/risk-params": {
+      "get": {
+        "operationId": "fetchMarketRiskParams",
+        "tags": [
+          "Markets"
+        ],
+        "summary": "Get market risk parameters",
+        "description": "Returns per-market risk parameters including margin requirements and maximum leverage. Populated by the indexer's market_params_poller from the engine's market registry.",
+        "security": [
+          {
+            "hmacAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/MarketId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Market risk parameters.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketRiskParams"
+                },
+                "example": {
+                  "market_id": "BTC-USDX-PERP",
+                  "max_leverage": 20,
+                  "initial_margin_rate": "0.05",
+                  "maintenance_margin_rate": "0.025"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "description": "Market not found"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
     "/orders": {
       "post": {
         "tags": [
@@ -2159,6 +2206,27 @@
           },
           "adl_event_count": {
             "type": "integer"
+          }
+        }
+      },
+      "MarketRiskParams": {
+        "type": "object",
+        "description": "Per-market risk parameters: margin rates and maximum leverage.",
+        "properties": {
+          "market_id": {
+            "type": "string"
+          },
+          "max_leverage": {
+            "type": "integer",
+            "description": "Maximum leverage allowed for this market"
+          },
+          "initial_margin_rate": {
+            "$ref": "#/components/schemas/Decimal",
+            "description": "Initial margin requirement as a decimal ratio (e.g., 0.05 = 5%)"
+          },
+          "maintenance_margin_rate": {
+            "$ref": "#/components/schemas/Decimal",
+            "description": "Maintenance margin requirement as a decimal ratio (e.g., 0.025 = 2.5%)"
           }
         }
       },
