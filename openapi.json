@@ -1084,11 +1084,7 @@
         ],
         "summary": "Get market risk parameters",
         "description": "Returns per-market risk parameters including margin requirements and maximum leverage. Populated by the indexer's market_params_poller from the engine's market registry.",
-        "security": [
-          {
-            "hmacAuth": []
-          }
-        ],
+        "security": [],
         "parameters": [
           {
             "$ref": "#/components/parameters/MarketId"
@@ -1110,9 +1106,6 @@
                 }
               }
             }
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "description": "Market not found"
