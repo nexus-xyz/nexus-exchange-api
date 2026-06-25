@@ -1225,7 +1225,17 @@
         },
         "responses": {
           "201": {
-            "description": "Array of order responses"
+            "description": "Per-order results, in request order. Returned with status 201 for the batch as a whole even when individual entries failed; inspect each entry's `error`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OrderResult"
+                  }
+                }
+              }
+            }
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -2503,6 +2513,74 @@
             "items": {
               "$ref": "#/components/schemas/Fill"
             }
+          }
+        }
+      },
+      "OrderResult": {
+        "description": "One entry in the array returned by POST /orders/batch. The batch is sequential and non-atomic, so each entry independently reports either a placed order or a per-order rejection, in request order. Internally tagged by `outcome`: `ok` carries the same `{ order, fills }` shape as POST /orders, `err` carries the same `{ error, message }` shape as the global error envelope.",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/OrderResultOk"
+          },
+          {
+            "$ref": "#/components/schemas/OrderResultErr"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "outcome",
+          "mapping": {
+            "ok": "#/components/schemas/OrderResultOk",
+            "err": "#/components/schemas/OrderResultErr"
+          }
+        }
+      },
+      "OrderResultOk": {
+        "type": "object",
+        "description": "A placed order in a batch result (outcome `ok`).",
+        "required": [
+          "outcome",
+          "order"
+        ],
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "ok"
+            ]
+          },
+          "order": {
+            "$ref": "#/components/schemas/Order"
+          },
+          "fills": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Fill"
+            }
+          }
+        }
+      },
+      "OrderResultErr": {
+        "type": "object",
+        "description": "A rejected order in a batch result (outcome `err`). Mirrors the global error envelope.",
+        "required": [
+          "outcome",
+          "error",
+          "message"
+        ],
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "err"
+            ]
+          },
+          "error": {
+            "type": "string",
+            "description": "Machine-readable error code."
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable error message."
           }
         }
       },
