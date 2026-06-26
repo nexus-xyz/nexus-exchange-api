@@ -8,6 +8,13 @@ Pre-1.0 versioning convention:
 
 ---
 
+## [0.5.1](https://github.com/nexus-xyz/nexus-exchange-api/compare/v0.5.0...v0.5.1) (2026-06-26)
+
+
+### Features
+
+* **ci:** dispatch spec-released to SDKs on release (ENG-3563) ([#31](https://github.com/nexus-xyz/nexus-exchange-api/issues/31)) ([b437910](https://github.com/nexus-xyz/nexus-exchange-api/commit/b437910b8d26b7da91ea2aa1d12eb6414326d317))
+
 ## [0.5.0](https://github.com/nexus-xyz/nexus-exchange-api/compare/v0.4.0...v0.5.0) (2026-06-25)
 
 
