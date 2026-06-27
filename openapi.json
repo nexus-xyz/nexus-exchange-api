@@ -11,10 +11,6 @@
       "description": "Production"
     },
     {
-      "url": "https://nexus-exchange-demo.fly.dev",
-      "description": "Demo/Staging"
-    },
-    {
       "url": "http://localhost:9090",
       "description": "Local development"
     }
