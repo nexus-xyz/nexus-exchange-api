@@ -2916,10 +2916,12 @@
           },
           "time_in_force": {
             "type": "string",
+            "description": "Time-in-force policy. `PostOnly` rejects the order if it would take liquidity (cross the book) on entry, guaranteeing it rests as a maker.",
             "enum": [
               "GTC",
               "IOC",
-              "FOK"
+              "FOK",
+              "PostOnly"
             ]
           },
           "reduce_only": {
