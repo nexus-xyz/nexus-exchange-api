@@ -8,6 +8,16 @@ Pre-1.0 versioning convention:
 
 ---
 
+## [0.5.1](https://github.com/nexus-xyz/nexus-exchange-api/compare/v0.5.0...v0.5.1) (2026-07-01)
+
+
+### Features
+
+* add POST /account/margin endpoint ([#37](https://github.com/nexus-xyz/nexus-exchange-api/issues/37)) ([18bd18e](https://github.com/nexus-xyz/nexus-exchange-api/commit/18bd18efb8f653162bb8bb057aad5575e33834da))
+* add PostOnly time-in-force to OrderRequest ([#35](https://github.com/nexus-xyz/nexus-exchange-api/issues/35)) ([29bd5af](https://github.com/nexus-xyz/nexus-exchange-api/commit/29bd5af6f477e9d7c60fa51a2b4850ff85f9ecff))
+* **ci:** dispatch spec-released to SDKs on release (ENG-3563) ([#31](https://github.com/nexus-xyz/nexus-exchange-api/issues/31)) ([b437910](https://github.com/nexus-xyz/nexus-exchange-api/commit/b437910b8d26b7da91ea2aa1d12eb6414326d317))
+* **markets:** add GET /markets/{market_id}/risk-params to spec (ENG-4138) ([#33](https://github.com/nexus-xyz/nexus-exchange-api/issues/33)) ([ef98da9](https://github.com/nexus-xyz/nexus-exchange-api/commit/ef98da92c462dd9294bf0ea1569974ae71817c66))
+
 ## [0.5.0](https://github.com/nexus-xyz/nexus-exchange-api/compare/v0.4.0...v0.5.0) (2026-06-25)
 
 
