@@ -1453,6 +1453,58 @@
         }
       }
     },
+    "/account/margin": {
+      "post": {
+        "operationId": "adjustMargin",
+        "tags": [
+          "Account"
+        ],
+        "summary": "Add or remove isolated margin on an open position",
+        "security": [
+          {
+            "hmacAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "market_id": "BTC-USDX-PERP",
+                "amount": "100",
+                "direction": "add"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated allocated margin and account collateral after the adjustment.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "market_id": "BTC-USDX-PERP",
+                  "allocated_margin": "350.00",
+                  "collateral": "9900.00"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid amount, position not in isolated mode (MarginModeNotIsolated), or removal breaches the withdrawal floor / exceeds collateral (InsufficientMargin / InsufficientBalance)."
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "description": "No open position for the account in this market (NoOpenPosition)."
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
     "/account/credit": {
       "post": {
         "operationId": "credit",
