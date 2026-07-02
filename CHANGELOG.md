@@ -8,6 +8,17 @@ Pre-1.0 versioning convention:
 
 ---
 
+## [0.6.0](https://github.com/nexus-xyz/nexus-exchange-api/compare/v0.5.1...v0.6.0) (2026-07-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* fetchOrder and cancelOrder now require a `market_id` query parameter.
+
+### Features
+
+* require market_id on the by-id order routes (fetch, cancel) ([#38](https://github.com/nexus-xyz/nexus-exchange-api/issues/38)) ([256c13c](https://github.com/nexus-xyz/nexus-exchange-api/commit/256c13c743b39c900b825cc8f256952821db3527))
+
 ## [0.5.1](https://github.com/nexus-xyz/nexus-exchange-api/compare/v0.5.0...v0.5.1) (2026-07-01)
 
 
