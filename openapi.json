@@ -1242,6 +1242,15 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "market_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Market the order rests on (required for routing)."
           }
         ],
         "responses": {
@@ -1284,6 +1293,15 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "market_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Market the order rests on (required for routing)."
           }
         ],
         "responses": {
