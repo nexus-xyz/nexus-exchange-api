@@ -8,6 +8,13 @@ Pre-1.0 versioning convention:
 
 ---
 
+## [0.6.1](https://github.com/nexus-xyz/nexus-exchange-api/compare/v0.6.0...v0.6.1) (2026-07-06)
+
+
+### Features
+
+* add GET /ready endpoint (engine readiness) ([#43](https://github.com/nexus-xyz/nexus-exchange-api/issues/43)) ([b8c5441](https://github.com/nexus-xyz/nexus-exchange-api/commit/b8c54416cbbed741f007200557d28ed25809dae0))
+
 ## [0.6.0](https://github.com/nexus-xyz/nexus-exchange-api/compare/v0.5.1...v0.6.0) (2026-07-02)
 
 
