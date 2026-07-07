@@ -8,6 +8,13 @@ Pre-1.0 versioning convention:
 
 ---
 
+## [0.6.2](https://github.com/nexus-xyz/nexus-exchange-api/compare/v0.6.1...v0.6.2) (2026-07-07)
+
+
+### Features
+
+* add /api/v1 route variants for direct-indexer surface (ENG-4943) ([#41](https://github.com/nexus-xyz/nexus-exchange-api/issues/41)) ([b623cfd](https://github.com/nexus-xyz/nexus-exchange-api/commit/b623cfd5975e00462165fe7d75bf62bc4ccf01bf))
+
 ## [0.6.1](https://github.com/nexus-xyz/nexus-exchange-api/compare/v0.6.0...v0.6.1) (2026-07-06)
 
 
