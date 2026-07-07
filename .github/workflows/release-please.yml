@@ -40,7 +40,7 @@ jobs:
       # vendoring it, so GitHub's asset download_count gives us an adoption
       # signal. Only runs when a release was just created.
       - if: ${{ steps.release.outputs.release_created }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - if: ${{ steps.release.outputs.release_created }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
