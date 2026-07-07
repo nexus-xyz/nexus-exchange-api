@@ -1069,13 +1069,41 @@
               "schema": {
                 "$ref": "#/components/schemas/OrderRequest"
               },
-              "example": {
-                "market_id": "BTC-USDX-PERP",
-                "side": "Buy",
-                "order_type": "Limit",
-                "price": "50000",
-                "quantity": "0.1",
-                "time_in_force": "GTC"
+              "examples": {
+                "limit": {
+                  "summary": "Plain limit order",
+                  "value": {
+                    "market_id": "BTC-USDX-PERP",
+                    "side": "Buy",
+                    "order_type": "Limit",
+                    "price": "50000",
+                    "quantity": "0.1",
+                    "time_in_force": "GTC"
+                  }
+                },
+                "stopLimit": {
+                  "summary": "Stop-limit — requires trigger_price and a limit price",
+                  "value": {
+                    "market_id": "BTC-USDX-PERP",
+                    "side": "Sell",
+                    "order_type": "StopLimit",
+                    "trigger_price": "48000",
+                    "price": "47900",
+                    "quantity": "0.1",
+                    "time_in_force": "GTC"
+                  }
+                },
+                "trailingStop": {
+                  "summary": "Trailing stop — market-only, requires trailing_offset_bps",
+                  "value": {
+                    "market_id": "BTC-USDX-PERP",
+                    "side": "Sell",
+                    "order_type": "TrailingStop",
+                    "trailing_offset_bps": 250,
+                    "quantity": "0.1",
+                    "time_in_force": "IOC"
+                  }
+                }
               }
             }
           }
@@ -4585,6 +4613,7 @@
       },
       "OrderRequest": {
         "type": "object",
+        "description": "Order placement request. Supports plain `Limit` / `Market` orders and five conditional order types (`StopLimit`, `StopMarket`, `TakeProfitLimit`, `TakeProfitMarket`, `TrailingStop`). Field requirements depend on `order_type`:\n\n- **Limit-family** (`Limit`, `StopLimit`, `TakeProfitLimit`) require a limit `price`.\n- **Triggerable, non-trailing** orders (`StopLimit`, `StopMarket`, `TakeProfitLimit`, `TakeProfitMarket`) require a `trigger_price` (the legacy `stop_price` field is accepted as a fallback when `trigger_price` is absent).\n- **`TrailingStop`** is market-only — it fires as a market order — and requires `trailing_offset_bps`. It does not take a limit `price` or a `trigger_price` (the trigger anchor is derived from the mark price and the offset).",
         "required": [
           "market_id",
           "side",
@@ -4605,14 +4634,20 @@
           },
           "order_type": {
             "type": "string",
+            "description": "Order type. `Limit` and `Market` are unconditional. The remaining five are conditional: `StopLimit` / `StopMarket` fire when the mark price crosses `trigger_price` in the adverse direction; `TakeProfitLimit` / `TakeProfitMarket` fire on the favorable direction; `TrailingStop` fires as a market order when the mark retraces from its best-seen extreme by `trailing_offset_bps`. See the schema description for per-type field requirements.",
             "enum": [
               "Limit",
-              "Market"
+              "Market",
+              "StopLimit",
+              "StopMarket",
+              "TakeProfitLimit",
+              "TakeProfitMarket",
+              "TrailingStop"
             ]
           },
           "price": {
             "$ref": "#/components/schemas/Decimal",
-            "description": "Required for Limit orders"
+            "description": "Limit price. Required for limit-family orders (`Limit`, `StopLimit`, `TakeProfitLimit`); omit for market-family and trailing orders."
           },
           "quantity": {
             "$ref": "#/components/schemas/Decimal"
@@ -4629,6 +4664,37 @@
           },
           "reduce_only": {
             "type": "boolean"
+          },
+          "stop_price": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Decimal"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "deprecated": true,
+            "description": "**Deprecated** — use `trigger_price` instead. Legacy trigger threshold for the stop / take-profit family. Accepted as a fallback only when `trigger_price` is absent; when both are supplied, `trigger_price` wins. Ignored for `Limit`, `Market`, and `TrailingStop` orders."
+          },
+          "trigger_price": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Decimal"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Canonical trigger threshold for triggerable, non-trailing orders (`StopLimit`, `StopMarket`, `TakeProfitLimit`, `TakeProfitMarket`), which require it (the legacy `stop_price` field is accepted as a fallback when this is omitted). Not used by `Limit`, `Market`, or `TrailingStop` orders."
+          },
+          "trailing_offset_bps": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "description": "Trailing-stop offset in basis points (1 bp = 0.01%). Required for `TrailingStop` orders and ignored for all other order types. The order fires as a market order once the mark price retraces from its best-seen extreme by this many basis points."
           }
         }
       },
