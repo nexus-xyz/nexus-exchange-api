@@ -6,6 +6,7 @@
 REST and WebSocket API for [Nexus Exchange](https://exchange.nexus.xyz) — a perpetual futures exchange for crypto, equities, FX, and commodities.
 
 - **Base URL:** `https://exchange.nexus.xyz/api/exchange`
+- **Direct-service base:** `https://exchange.nexus.xyz/api/v1` — the market-data and account/trading surfaces are also served directly by their backend service under an `/api/v1` prefix (routed by the load balancer). Both bases are live in parallel; the same HMAC signing applies, over the full request path (e.g. `/api/v1/orders`).
 - **OpenAPI spec:** [`openapi.json`](./openapi.json)
 - **Changelog:** [`CHANGELOG.md`](./CHANGELOG.md)
 - **Interactive docs:** [exchange.nexus.xyz/api-docs](https://exchange.nexus.xyz/api-docs)
