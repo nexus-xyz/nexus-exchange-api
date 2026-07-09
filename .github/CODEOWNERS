@@ -1,5 +1,6 @@
 # Default reviewers. Any member of @nexus-xyz/eng can review and unblock — no
-# single-person bottleneck. @Luc-Campos (SDK lead) and @collinjackson are listed
-# explicitly so both are auto-requested on every PR.
+# single-person bottleneck. @Luc-Campos (SDK lead), @collinjackson, and
+# @alecjames-dot are listed explicitly so all three are auto-requested on every
+# PR. @alecjames-dot is added for visibility into API changes.
 # Docs: https://docs.github.com/articles/about-code-owners
-* @nexus-xyz/eng @Luc-Campos @collinjackson
+* @nexus-xyz/eng @Luc-Campos @collinjackson @alecjames-dot
