@@ -226,7 +226,7 @@
           "Agents"
         ],
         "summary": "Register an agent key",
-        "description": "Register a new agent key for your wallet. An agent is an Ethereum-derived keypair that can sign trading requests on your behalf without exposing your main wallet. The registration is authorized by an EIP-712 signature from the wallet that will own the agent — no session token required.\n\nEIP-712 domain: `{ name: 'NexusExchange', version: '1', chainId: <testnet chain id> }`.\nTyped data type: `RegisterAgent { address agent, uint256 expiresAt, uint256 nonce }`.",
+        "description": "Register a new agent key for your wallet. An agent is an Ethereum-derived keypair that can sign trading requests on your behalf without exposing your main wallet. The registration is authorized by an EIP-712 signature from the wallet that will own the agent — no session token required.\n\nEIP-712 domain: `{ name: 'Nexus Exchange', version: '1', chainId: <testnet chain id> }`.\nTyped data type: `RegisterAgent { address agent, uint64 expiresAt, uint64 nonce }`.",
         "requestBody": {
           "required": true,
           "content": {
