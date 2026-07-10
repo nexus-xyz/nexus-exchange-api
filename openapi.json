@@ -656,6 +656,9 @@
               "maximum": 1000
             },
             "description": "Number of trades to return"
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
           }
         ],
         "responses": {
@@ -684,6 +687,11 @@
                     "info": {}
                   }
                 ]
+              }
+            },
+            "headers": {
+              "X-Next-Cursor": {
+                "$ref": "#/components/headers/XNextCursor"
               }
             }
           },
@@ -1730,6 +1738,9 @@
               "maximum": 1000
             },
             "description": "Maximum fills to return"
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
           }
         ],
         "responses": {
@@ -1757,6 +1768,11 @@
                     "is_liquidation": false
                   }
                 ]
+              }
+            },
+            "headers": {
+              "X-Next-Cursor": {
+                "$ref": "#/components/headers/XNextCursor"
               }
             }
           },
@@ -2157,6 +2173,9 @@
               "maximum": 720
             },
             "description": "Maximum points to return (capped at 720)."
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
           }
         ],
         "responses": {
@@ -2170,6 +2189,11 @@
                     "$ref": "#/components/schemas/EquityPoint"
                   }
                 }
+              }
+            },
+            "headers": {
+              "X-Next-Cursor": {
+                "$ref": "#/components/headers/XNextCursor"
               }
             }
           },
@@ -2202,6 +2226,9 @@
               "maximum": 200
             },
             "description": "Maximum records to return"
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
           }
         ],
         "responses": {
@@ -2215,6 +2242,11 @@
                     "$ref": "#/components/schemas/ClosedPosition"
                   }
                 }
+              }
+            },
+            "headers": {
+              "X-Next-Cursor": {
+                "$ref": "#/components/headers/XNextCursor"
               }
             }
           },
@@ -2248,6 +2280,9 @@
               "maximum": 500
             },
             "description": "Maximum records to return"
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
           }
         ],
         "responses": {
@@ -2261,6 +2296,11 @@
                     "$ref": "#/components/schemas/OrderHistoryEntry"
                   }
                 }
+              }
+            },
+            "headers": {
+              "X-Next-Cursor": {
+                "$ref": "#/components/headers/XNextCursor"
               }
             }
           },
@@ -4107,6 +4147,15 @@
         },
         "example": "BTC-USDX-PERP",
         "description": "Market identifier (e.g. BTC-USDX-PERP, ETH-USDX-PERP)"
+      },
+      "Cursor": {
+        "name": "cursor",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string"
+        },
+        "description": "Opaque pagination cursor returned in the previous response's `X-Next-Cursor` header. Omit to fetch the first page. Treat the token as opaque: its format is not part of the contract and may change. A malformed or expired cursor is not an error — the server serves the first page."
       }
     },
     "schemas": {
@@ -5503,6 +5552,14 @@
             "description": "Present only when the early-access gate is active."
           }
         }
+      }
+    },
+    "headers": {
+      "XNextCursor": {
+        "schema": {
+          "type": "string"
+        },
+        "description": "Opaque cursor for the next page. Present only when more results exist beyond this response; absent on the last page. Pass it back via the `cursor` query parameter to fetch the next page. The response body stays a bare array — pagination state rides only in this header."
       }
     }
   }
