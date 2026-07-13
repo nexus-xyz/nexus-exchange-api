@@ -4027,74 +4027,6 @@
           }
         }
       }
-    },
-    "/api/v1/account/cancel-on-disconnect": {
-      "get": {
-        "operationId": "fetchCancelOnDisconnectV1",
-        "summary": "Get cancel-on-disconnect setting",
-        "description": "Returns the authenticated account's cancel-on-disconnect opt-in. Default is disabled.",
-        "tags": [
-          "Account"
-        ],
-        "security": [
-          {
-            "hmacAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Current cancel-on-disconnect configuration.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CancelOnDisconnectConfig"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Missing or invalid credentials."
-          }
-        }
-      },
-      "put": {
-        "operationId": "setCancelOnDisconnectV1",
-        "summary": "Set cancel-on-disconnect setting",
-        "description": "Enables or disables cancel-on-disconnect for the authenticated account. Opt-in, per account; takes effect on the account's next WebSocket disconnect.",
-        "tags": [
-          "Account"
-        ],
-        "security": [
-          {
-            "hmacAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CancelOnDisconnectConfig"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Current cancel-on-disconnect configuration.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CancelOnDisconnectConfig"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Missing or invalid credentials."
-          }
-        }
-      }
     }
   },
   "components": {
@@ -4623,7 +4555,7 @@
       },
       "OrderRequest": {
         "type": "object",
-        "description": "Order placement request. Supports plain `Limit` / `Market` orders and five conditional order types (`StopLimit`, `StopMarket`, `TakeProfitLimit`, `TakeProfitMarket`, `TrailingStop`). Field requirements depend on `order_type`:\n\n- **Limit-family** (`Limit`, `StopLimit`, `TakeProfitLimit`) require a limit `price`.\n- **Triggerable, non-trailing** orders (`StopLimit`, `StopMarket`, `TakeProfitLimit`, `TakeProfitMarket`) require a `trigger_price` (the legacy `stop_price` field is accepted as a fallback when `trigger_price` is absent).\n- **`TrailingStop`** is market-only \u2014 it fires as a market order \u2014 and requires `trailing_offset_bps`. It does not take a limit `price` or a `trigger_price` (the trigger anchor is derived from the mark price and the offset).",
+        "description": "Order placement request. Supports plain `Limit` / `Market` orders and six conditional order types (`StopLimit`, `StopMarket`, `TakeProfitLimit`, `TakeProfitMarket`, `TrailingStop`, `TrailingLimit`). Field requirements depend on `order_type`:\n\n- **Limit-family** (`Limit`, `StopLimit`, `TakeProfitLimit`) require a limit `price`.\n- **Triggerable, non-trailing** orders (`StopLimit`, `StopMarket`, `TakeProfitLimit`, `TakeProfitMarket`) require a `trigger_price` (the legacy `stop_price` field is accepted as a fallback when `trigger_price` is absent).\n- **`TrailingStop`** is market-only \u2014 it fires as a market order \u2014 and requires `trailing_offset_bps`. It does not take a limit `price` or a `trigger_price` (the trigger anchor is derived from the mark price and the offset).\n- **`TrailingLimit`** trails like `TrailingStop` but fires a limit order instead of a market order. It requires both `trailing_offset_bps` (the trailing trigger) and `limit_offset_bps` (the fire-time limit offset). It does not take `price`, `trigger_price`, or `stop_price`; the limit price is computed at fire time from the mark that crossed the offset.",
         "required": [
           "market_id",
           "side",
@@ -4644,7 +4576,7 @@
           },
           "order_type": {
             "type": "string",
-            "description": "Order type. `Limit` and `Market` are unconditional. The remaining five are conditional: `StopLimit` / `StopMarket` fire when the mark price crosses `trigger_price` in the adverse direction; `TakeProfitLimit` / `TakeProfitMarket` fire on the favorable direction; `TrailingStop` fires as a market order when the mark retraces from its best-seen extreme by `trailing_offset_bps`. See the schema description for per-type field requirements.",
+            "description": "Order type. `Limit` and `Market` are unconditional. The remaining six are conditional: `StopLimit` / `StopMarket` fire when the mark price crosses `trigger_price` in the adverse direction; `TakeProfitLimit` / `TakeProfitMarket` fire on the favorable direction; `TrailingStop` fires as a market order when the mark retraces from its best-seen extreme by `trailing_offset_bps`; `TrailingLimit` fires the same way but rests a limit order priced off the fire price by `limit_offset_bps`. See the schema description for per-type field requirements.",
             "enum": [
               "Limit",
               "Market",
@@ -4686,7 +4618,7 @@
               }
             ],
             "deprecated": true,
-            "description": "**Deprecated** \u2014 use `trigger_price` instead. Legacy trigger threshold for the stop / take-profit family. Accepted as a fallback only when `trigger_price` is absent; when both are supplied, `trigger_price` wins. Ignored for `Limit`, `Market`, and `TrailingStop` orders."
+            "description": "**Deprecated** \u2014 use `trigger_price` instead. Legacy trigger threshold for the stop / take-profit family. Accepted as a fallback only when `trigger_price` is absent; when both are supplied, `trigger_price` wins. Ignored for `Limit`, `Market`, `TrailingStop`, and `TrailingLimit` orders."
           },
           "trigger_price": {
             "oneOf": [
@@ -4705,16 +4637,16 @@
               "null"
             ],
             "minimum": 1,
-            "description": "Trailing-stop offset in basis points (1 bp = 0.01%). Required for `TrailingStop` orders and ignored for all other order types. The order fires as a market order once the mark price retraces from its best-seen extreme by this many basis points."
+            "description": "Trailing offset in basis points (1 bp = 0.01%). Required for `TrailingStop` and `TrailingLimit` orders; ignored for all other order types. The trailing trigger fires once the mark price retraces from its best-seen extreme by this many basis points: `TrailingStop` fires a market order, `TrailingLimit` fires a limit order priced by `limit_offset_bps`."
           },
           "limit_offset_bps": {
             "type": [
               "integer",
               "null"
             ],
-            "minimum": 1,
+            "minimum": 0,
             "maximum": 9999,
-            "description": "Offset in basis points for the fired limit price (TrailingLimit only; required together with trailing_offset_bps). When the trailing trigger fires at fire_price, the injected limit order rests at fire_price * (1 + offset) for buys / * (1 - offset) for sells, tick-rounded toward the tighter bound. Ignored for other order types."
+            "description": "Offset in basis points for the fired limit price (`TrailingLimit` only; required together with `trailing_offset_bps`). When the trailing trigger fires at `fire_price`, the injected limit order rests at `fire_price` * (1 + offset) for buys / * (1 - offset) for sells, tick-rounded toward the tighter bound. A value of 0 rests the limit exactly at `fire_price`. Ignored for other order types."
           }
         }
       },
@@ -5579,18 +5511,6 @@
           "early_access_allowed": {
             "type": "boolean",
             "description": "Present only when the early-access gate is active."
-          }
-        }
-      },
-      "CancelOnDisconnectConfig": {
-        "type": "object",
-        "required": [
-          "enabled"
-        ],
-        "properties": {
-          "enabled": {
-            "type": "boolean",
-            "description": "Whether cancel-on-disconnect is enabled for this account. When enabled and the account's last authenticated WebSocket connection drops without reconnecting within the server's grace window, all of the account's resting orders are cancelled."
           }
         }
       }
