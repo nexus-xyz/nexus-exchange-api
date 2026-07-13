@@ -1659,6 +1659,90 @@
         }
       }
     },
+    "/account/cancel-on-disconnect": {
+      "get": {
+        "tags": [
+          "Account"
+        ],
+        "summary": "Get cancel-on-disconnect status",
+        "description": "Returns the authenticated account's cancel-on-disconnect (COD) status. COD is an opt-in, per-account dead man's switch: when the account's last authenticated `/ws` connection drops and does not reconnect within the grace window, the exchange automatically cancels all of the account's resting orders, so a crashed client cannot leave orders exposed. `enabled` is the account's own opt-in; `active` additionally requires the exchange-side feature switch, so it reflects whether COD will actually fire; `grace_secs` is the exchange-configured reconnect window in seconds (null when the feature is unavailable). Clients that trade purely over REST and never open a `/ws` connection are not covered.",
+        "operationId": "fetchCancelOnDisconnect",
+        "security": [
+          {
+            "hmacAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current cancel-on-disconnect status for the account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancelOnDisconnectStatus"
+                },
+                "example": {
+                  "enabled": true,
+                  "active": true,
+                  "grace_secs": 10
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Account"
+        ],
+        "summary": "Set cancel-on-disconnect",
+        "description": "Enables or disables cancel-on-disconnect for the authenticated account. Opt-in is per account and off by default: someone who deliberately leaves a passive resting order while offline should not have a brief blip cancel it. Enable it when you want the guarantee that a dead client cannot keep orders resting — typical for market makers and algorithmic traders. Returns the resulting COD status (same shape as the GET).",
+        "operationId": "setCancelOnDisconnect",
+        "security": [
+          {
+            "hmacAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetCancelOnDisconnectRequest"
+              },
+              "example": {
+                "enabled": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The resulting cancel-on-disconnect status for the account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancelOnDisconnectStatus"
+                },
+                "example": {
+                  "enabled": true,
+                  "active": true,
+                  "grace_secs": 10
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request body."
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
     "/positions": {
       "get": {
         "tags": [
@@ -3844,6 +3928,100 @@
         }
       }
     },
+    "/api/v1/account/cancel-on-disconnect": {
+      "servers": [
+        {
+          "url": "https://exchange.nexus.xyz",
+          "description": "Production (direct service)"
+        },
+        {
+          "url": "http://localhost:9090",
+          "description": "Local development"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Account"
+        ],
+        "summary": "Get cancel-on-disconnect status",
+        "description": "Returns the authenticated account's cancel-on-disconnect (COD) status. COD is an opt-in, per-account dead man's switch: when the account's last authenticated `/ws` connection drops and does not reconnect within the grace window, the exchange automatically cancels all of the account's resting orders, so a crashed client cannot leave orders exposed. `enabled` is the account's own opt-in; `active` additionally requires the exchange-side feature switch, so it reflects whether COD will actually fire; `grace_secs` is the exchange-configured reconnect window in seconds (null when the feature is unavailable). Clients that trade purely over REST and never open a `/ws` connection are not covered.",
+        "operationId": "fetchCancelOnDisconnectV1",
+        "security": [
+          {
+            "hmacAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current cancel-on-disconnect status for the account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancelOnDisconnectStatus"
+                },
+                "example": {
+                  "enabled": true,
+                  "active": true,
+                  "grace_secs": 10
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Account"
+        ],
+        "summary": "Set cancel-on-disconnect",
+        "description": "Enables or disables cancel-on-disconnect for the authenticated account. Opt-in is per account and off by default: someone who deliberately leaves a passive resting order while offline should not have a brief blip cancel it. Enable it when you want the guarantee that a dead client cannot keep orders resting — typical for market makers and algorithmic traders. Returns the resulting COD status (same shape as the GET).",
+        "operationId": "setCancelOnDisconnectV1",
+        "security": [
+          {
+            "hmacAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetCancelOnDisconnectRequest"
+              },
+              "example": {
+                "enabled": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The resulting cancel-on-disconnect status for the account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancelOnDisconnectStatus"
+                },
+                "example": {
+                  "enabled": true,
+                  "active": true,
+                  "grace_secs": 10
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request body."
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
     "/api/v1/positions": {
       "servers": [
         {
@@ -4878,6 +5056,44 @@
             "description": "Unix timestamp in milliseconds when the bucket refills back to `limit`; `0` when it is already full. Null for the unlimited tier."
           }
         }
+      },
+      "CancelOnDisconnectStatus": {
+        "type": "object",
+        "description": "Cancel-on-disconnect status for the authenticated account.",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "The account's own COD opt-in setting."
+          },
+          "active": {
+            "type": "boolean",
+            "description": "Whether COD will actually fire for this account: the account opt-in AND the exchange-side feature switch. When `enabled` is true but `active` is false, the exchange has the feature switched off and no cancel fires on disconnect."
+          },
+          "grace_secs": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Seconds the exchange waits after the last `/ws` disconnect before cancelling; a reconnect within the window disarms the cancel. Null when the feature is unavailable on this deployment."
+          }
+        },
+        "required": [
+          "enabled",
+          "active"
+        ]
+      },
+      "SetCancelOnDisconnectRequest": {
+        "type": "object",
+        "description": "Cancel-on-disconnect opt-in change for the authenticated account.",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "True to enable COD for the account, false to disable."
+          }
+        },
+        "required": [
+          "enabled"
+        ]
       },
       "Position": {
         "type": "object",
