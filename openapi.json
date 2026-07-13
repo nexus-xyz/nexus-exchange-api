@@ -4629,14 +4629,14 @@
                 "type": "null"
               }
             ],
-            "description": "Canonical trigger threshold for triggerable, non-trailing orders (`StopLimit`, `StopMarket`, `TakeProfitLimit`, `TakeProfitMarket`), which require it (the legacy `stop_price` field is accepted as a fallback when this is omitted). Not used by `Limit`, `Market`, or `TrailingStop` orders."
+            "description": "Canonical trigger threshold for triggerable, non-trailing orders (`StopLimit`, `StopMarket`, `TakeProfitLimit`, `TakeProfitMarket`), which require it (the legacy `stop_price` field is accepted as a fallback when this is omitted). Not used by `Limit`, `Market`, `TrailingStop`, or `TrailingLimit` orders."
           },
           "trailing_offset_bps": {
             "type": [
               "integer",
               "null"
             ],
-            "minimum": 1,
+            "minimum": 0,
             "description": "Trailing offset in basis points (1 bp = 0.01%). Required for `TrailingStop` and `TrailingLimit` orders; ignored for all other order types. The trailing trigger fires once the mark price retraces from its best-seen extreme by this many basis points: `TrailingStop` fires a market order, `TrailingLimit` fires a limit order priced by `limit_offset_bps`."
           },
           "limit_offset_bps": {
@@ -4767,6 +4767,13 @@
           },
           "order_type": {
             "type": "string"
+          },
+          "limit_offset_bps": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Fire-time limit offset in basis points, echoed for `TrailingLimit` orders (see the `OrderRequest.limit_offset_bps` placement field); null for other order types."
           },
           "price": {
             "$ref": "#/components/schemas/Decimal"
