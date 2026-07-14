@@ -4637,7 +4637,7 @@
               "null"
             ],
             "minimum": 0,
-            "description": "Trailing offset in basis points (1 bp = 0.01%). Required for `TrailingStop` and `TrailingLimit` orders; ignored for all other order types. The trailing trigger fires once the mark price retraces from its best-seen extreme by this many basis points: `TrailingStop` fires a market order, `TrailingLimit` fires a limit order priced by `limit_offset_bps`."
+            "description": "Trailing offset in basis points (1 bp = 0.01%). Required for `TrailingStop` and `TrailingLimit` orders; ignored for all other order types. The trailing trigger fires once the mark price retraces from its best-seen extreme by this many basis points: `TrailingStop` fires a market order, `TrailingLimit` fires a limit order priced by `limit_offset_bps`. A value of `0` is accepted and fires the trigger at the first mark-price evaluation after placement (no retracement required)."
           },
           "limit_offset_bps": {
             "type": [
