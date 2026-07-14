@@ -71,6 +71,10 @@
     {
       "name": "Admin",
       "description": "Tier management (requires ADMIN_SECRET)"
+    },
+    {
+      "name": "Bridge",
+      "description": "Cross-chain deposits: bridgeable assets, per-account deposit addresses, and deposit tracking (Phase A: USDC/USDX)."
     }
   ],
   "paths": {
@@ -4205,6 +4209,255 @@
           }
         }
       }
+    },
+    "/v1/bridge/assets": {
+      "get": {
+        "tags": [
+          "Bridge"
+        ],
+        "summary": "List bridgeable chains and assets",
+        "description": "Returns the supported chains and, per chain, the depositable assets (USDC, USDX) and withdrawable assets (USDX) with their decimals, minimum amounts, required confirmations, and fees.",
+        "operationId": "getBridgeAssets",
+        "security": [
+          {
+            "hmacAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Supported bridge chains and assets.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BridgeAssetsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/v1/bridge/deposit-addresses": {
+      "post": {
+        "tags": [
+          "Bridge"
+        ],
+        "summary": "Get or create a deposit address",
+        "description": "Get-or-create a deposit address for the authenticated account on a chain. Idempotent per `(account, chain)`: repeated calls return the same address rather than allocating a new one.",
+        "operationId": "createBridgeDepositAddress",
+        "security": [
+          {
+            "hmacAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBridgeDepositAddressRequest"
+              },
+              "example": {
+                "chain": "ethereum"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The account's deposit address for the chain (existing or newly created).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BridgeDepositAddress"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BridgeBadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Bridge"
+        ],
+        "summary": "List deposit addresses",
+        "description": "List the authenticated account's deposit addresses across chains.",
+        "operationId": "listBridgeDepositAddresses",
+        "security": [
+          {
+            "hmacAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The account's deposit addresses.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BridgeDepositAddress"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/v1/bridge/deposits": {
+      "get": {
+        "tags": [
+          "Bridge"
+        ],
+        "summary": "List bridge deposits",
+        "description": "List the authenticated account's cross-chain deposits, newest first. The watcher creates and advances these records.",
+        "operationId": "listBridgeDeposits",
+        "security": [
+          {
+            "hmacAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "maximum": 100
+            },
+            "description": "Maximum records to return."
+          },
+          {
+            "name": "chain",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by source chain."
+          },
+          {
+            "name": "asset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "USDC",
+                "USDX"
+              ]
+            },
+            "description": "Filter by deposited asset."
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "detected",
+                "confirming",
+                "credited",
+                "failed"
+              ]
+            },
+            "description": "Filter by deposit status."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bridge deposits, newest first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BridgeDeposit"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/v1/bridge/deposits/{id}": {
+      "get": {
+        "tags": [
+          "Bridge"
+        ],
+        "summary": "Get a bridge deposit",
+        "description": "Fetch a single cross-chain deposit by id. Only deposits owned by the authenticated account are returned.",
+        "operationId": "getBridgeDeposit",
+        "security": [
+          {
+            "hmacAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Deposit identifier."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The deposit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BridgeDeposit"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/BridgeNotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -4270,6 +4523,26 @@
             "example": {
               "code": "RateLimitExceeded",
               "tier": "Pro"
+            }
+          }
+        }
+      },
+      "BridgeBadRequest": {
+        "description": "The request was invalid (e.g. unsupported chain or asset, amount below minimum).",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/BridgeError"
+            }
+          }
+        }
+      },
+      "BridgeNotFound": {
+        "description": "The resource does not exist, or is not owned by the authenticated account.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/BridgeError"
             }
           }
         }
@@ -5717,6 +5990,284 @@
           "early_access_allowed": {
             "type": "boolean",
             "description": "Present only when the early-access gate is active."
+          }
+        }
+      },
+      "BridgeError": {
+        "type": "object",
+        "description": "Error envelope returned by all non-2xx /v1/bridge responses.",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string",
+                "description": "Machine-readable, stable error code (snake_case), e.g. `unsupported_chain`, `amount_below_minimum`, `deposit_not_found`."
+              },
+              "message": {
+                "type": "string",
+                "description": "Human-readable description; not intended for programmatic matching."
+              },
+              "details": {
+                "type": "object",
+                "additionalProperties": true,
+                "description": "Optional structured context for the error."
+              }
+            }
+          }
+        }
+      },
+      "BridgeAsset": {
+        "type": "object",
+        "description": "A bridgeable asset on a specific chain.",
+        "required": [
+          "symbol",
+          "decimals",
+          "min_amount",
+          "confirmations"
+        ],
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "enum": [
+              "USDC",
+              "USDX"
+            ],
+            "description": "Asset symbol. Phase A supports USDC and USDX only (USDT is out of scope for this cut)."
+          },
+          "decimals": {
+            "type": "integer",
+            "description": "On-chain token decimals for this asset on this chain."
+          },
+          "min_amount": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Decimal"
+              }
+            ],
+            "description": "Minimum amount accepted for a single deposit."
+          },
+          "confirmations": {
+            "type": "integer",
+            "description": "Block confirmations required before a deposit is credited."
+          },
+          "fee": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Decimal"
+              }
+            ],
+            "description": "Flat fee charged in units of the asset (may be \"0\")."
+          },
+          "contract_address": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "0x token contract address on the chain; null for a chain-native representation."
+          }
+        }
+      },
+      "BridgeChainAssets": {
+        "type": "object",
+        "description": "Bridgeable assets for one chain.",
+        "required": [
+          "chain",
+          "deposit_assets",
+          "withdraw_assets"
+        ],
+        "properties": {
+          "chain": {
+            "type": "string",
+            "description": "Chain identifier, e.g. `ethereum` or `base`."
+          },
+          "chain_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "EVM chain ID, when applicable."
+          },
+          "deposit_assets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BridgeAsset"
+            },
+            "description": "Assets that can be deposited from this chain (USDC, USDX)."
+          },
+          "withdraw_assets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BridgeAsset"
+            },
+            "description": "Assets that can be withdrawn to this chain (USDX). Withdrawal endpoints are a later phase; this lists the eventual capability."
+          }
+        }
+      },
+      "BridgeAssetsResponse": {
+        "type": "object",
+        "description": "Supported bridge chains and their deposit/withdraw assets.",
+        "required": [
+          "chains"
+        ],
+        "properties": {
+          "chains": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BridgeChainAssets"
+            }
+          }
+        }
+      },
+      "CreateBridgeDepositAddressRequest": {
+        "type": "object",
+        "required": [
+          "chain"
+        ],
+        "properties": {
+          "chain": {
+            "type": "string",
+            "description": "Chain to get-or-create a deposit address on. The operation is idempotent per `(account, chain)`: repeated calls return the same address."
+          }
+        }
+      },
+      "BridgeDepositAddress": {
+        "type": "object",
+        "description": "A per-account deposit address on a specific chain.",
+        "required": [
+          "address",
+          "chain",
+          "accepts",
+          "account_id",
+          "created_at"
+        ],
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "Deposit address on `chain` for the authenticated account. Sending a supported asset here credits the account."
+          },
+          "chain": {
+            "type": "string",
+            "description": "Chain this address belongs to."
+          },
+          "accepts": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "USDC",
+                "USDX"
+              ]
+            },
+            "description": "Assets creditable via this address."
+          },
+          "account_id": {
+            "type": "string",
+            "description": "0x-prefixed Nexus account the address credits."
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/TimestampMs"
+          }
+        }
+      },
+      "BridgeDeposit": {
+        "type": "object",
+        "description": "A cross-chain deposit tracked by the watcher (read model).",
+        "required": [
+          "id",
+          "account_id",
+          "chain",
+          "asset",
+          "amount",
+          "address",
+          "status",
+          "created_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Opaque, stable deposit identifier."
+          },
+          "account_id": {
+            "type": "string",
+            "description": "0x-prefixed Nexus account being credited."
+          },
+          "chain": {
+            "type": "string",
+            "description": "Source chain."
+          },
+          "asset": {
+            "type": "string",
+            "enum": [
+              "USDC",
+              "USDX"
+            ],
+            "description": "Deposited asset."
+          },
+          "amount": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Decimal"
+              }
+            ],
+            "description": "Deposit amount in units of `asset`."
+          },
+          "address": {
+            "type": "string",
+            "description": "Deposit address the funds arrived at."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "detected",
+              "confirming",
+              "credited",
+              "failed"
+            ],
+            "description": "Lifecycle: `detected` → `confirming` → `credited` | `failed`."
+          },
+          "confirmations": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Confirmations observed so far; null before the tx is seen on chain."
+          },
+          "required_confirmations": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Confirmations required before crediting."
+          },
+          "tx_hash": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Source-chain transaction hash; null until detected."
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/TimestampMs"
+          },
+          "updated_at": {
+            "$ref": "#/components/schemas/TimestampMs"
+          },
+          "credited_at": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Unix ms when the deposit was credited; null until `status` is `credited`."
           }
         }
       }
