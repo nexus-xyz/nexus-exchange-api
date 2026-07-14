@@ -124,7 +124,7 @@
           "Authentication"
         ],
         "summary": "Create an API key",
-        "description": "Create a new HMAC API key for the authenticated wallet. Returns the secret once — it is never stored or shown again. Requires a session token (Bearer) from POST /auth/login.",
+        "description": "Create a new HMAC API key for the authenticated wallet. Returns the secret once \u2014 it is never stored or shown again. Requires a session token (Bearer) from POST /auth/login.",
         "security": [
           {
             "bearerAuth": []
@@ -222,7 +222,7 @@
           "Agents"
         ],
         "summary": "Register an agent key",
-        "description": "Register a new agent key for your wallet. An agent is an Ethereum-derived keypair that can sign trading requests on your behalf without exposing your main wallet. The registration is authorized by an EIP-712 signature from the wallet that will own the agent — no session token required.\n\nEIP-712 domain: `{ name: 'NexusExchange', version: '1', chainId: <testnet chain id> }`.\nTyped data type: `RegisterAgent { address agent, uint256 expiresAt, uint256 nonce }`.",
+        "description": "Register a new agent key for your wallet. An agent is an Ethereum-derived keypair that can sign trading requests on your behalf without exposing your main wallet. The registration is authorized by an EIP-712 signature from the wallet that will own the agent \u2014 no session token required.\n\nEIP-712 domain: `{ name: 'NexusExchange', version: '1', chainId: <testnet chain id> }`.\nTyped data type: `RegisterAgent { address agent, uint256 expiresAt, uint256 nonce }`.",
         "requestBody": {
           "required": true,
           "content": {
@@ -256,10 +256,10 @@
             "description": "Bad request: bad_wallet, bad_agent, expiry_out_of_range [1 d, 90 d from now], or invalid_json"
           },
           "401": {
-            "description": "signature_invalid or signer_mismatch — the EIP-712 signature did not recover to the claimed wallet"
+            "description": "signature_invalid or signer_mismatch \u2014 the EIP-712 signature did not recover to the claimed wallet"
           },
           "409": {
-            "description": "duplicate_agent — the agent address is already registered to this wallet"
+            "description": "duplicate_agent \u2014 the agent address is already registered to this wallet"
           }
         }
       }
@@ -1082,7 +1082,7 @@
                   }
                 },
                 "stopLimit": {
-                  "summary": "Stop-limit — requires trigger_price and a limit price",
+                  "summary": "Stop-limit \u2014 requires trigger_price and a limit price",
                   "value": {
                     "market_id": "BTC-USDX-PERP",
                     "side": "Sell",
@@ -1094,7 +1094,7 @@
                   }
                 },
                 "trailingStop": {
-                  "summary": "Trailing stop — market-only, requires trailing_offset_bps",
+                  "summary": "Trailing stop \u2014 market-only, requires trailing_offset_bps",
                   "value": {
                     "market_id": "BTC-USDX-PERP",
                     "side": "Sell",
@@ -1629,7 +1629,7 @@
           "Account"
         ],
         "summary": "Get rate limit status",
-        "description": "Returns the authenticated caller's rate limit tier, effective request ceiling, remaining requests, and reset timestamp — the same data surface as the X-RateLimit-* response headers, exposed as a queryable resource. This endpoint does not consume a rate limit token, so it can be polled freely to self-manage request pacing without depleting the caller's budget. For HMAC API keys with a per-key rate, the reported values are the binding minimum of the key bucket and the owner bucket. For unlimited-tier callers (gateway keys), `limit`, `remaining`, and `reset_at_ms` are null.",
+        "description": "Returns the authenticated caller's rate limit tier, effective request ceiling, remaining requests, and reset timestamp \u2014 the same data surface as the X-RateLimit-* response headers, exposed as a queryable resource. This endpoint does not consume a rate limit token, so it can be polled freely to self-manage request pacing without depleting the caller's budget. For HMAC API keys with a per-key rate, the reported values are the binding minimum of the key bucket and the owner bucket. For unlimited-tier callers (gateway keys), `limit`, `remaining`, and `reset_at_ms` are null.",
         "operationId": "fetchRateLimitStatus",
         "security": [
           {
@@ -1797,7 +1797,7 @@
           "Account"
         ],
         "summary": "List your fills",
-        "description": "Returns up to 1000 fills for the authenticated account, newest first. Fills are trade executions resulting from order matches — each fill carries the matched price, quantity, fee, and whether it was the taker or maker side.",
+        "description": "Returns up to 1000 fills for the authenticated account, newest first. Fills are trade executions resulting from order matches \u2014 each fill carries the matched price, quantity, fee, and whether it was the taker or maker side.",
         "security": [
           {
             "hmacAuth": []
@@ -1914,7 +1914,7 @@
           "WebSocket"
         ],
         "summary": "Per-account WebSocket stream",
-        "description": "WebSocket endpoint for both public market data and per-account private channels. Requires a token from POST /ws/token:\n```\nwss://host/ws?token=YOUR_TOKEN\n```\nTokens are single-use and expire after 60 seconds.\n\nEvery client→server and server→client message is a JSON envelope tagged with an `op` field. Subscribe to one channel per message:\n```json\n{\"op\": \"subscribe\", \"channel\": \"trades\", \"market\": \"BTC-USDX-PERP\"}\n{\"op\": \"subscribe\", \"channel\": \"fills\"}\n```\nUnsubscribe with `{\"op\": \"unsubscribe\", \"channel\": \"...\", \"market\": \"...\"}`.\n\n**Public channels** (the token is always required to upgrade): `trades`, `book`, `candles` — each requires a `market` field.\n\n**Per-account channels** (scoped to the wallet that minted the token): `orders`, `fills`, `positions`, `balances`.\n\n**Server messages:**\n- `{\"op\": \"subscribed\", \"channel\": \"fills\", \"market\": null, \"seq_at_join\": 42}` — subscribe ack; `seq_at_join` is the channel's current sequence at attach time, used as the reconnect cursor.\n- `{\"op\": \"unsubscribed\", \"channel\": \"fills\", \"market\": null}` — unsubscribe ack.\n- `{\"op\": \"event\", \"channel\": \"fills\", \"market\": null, \"seq\": 43, \"payload\": {...}}` — a delivered event; `seq` is monotonic per channel.\n- `{\"op\": \"out_of_sync\", \"channel\": \"fills\", \"market\": null, \"oldest_seq\": 100}` — the requested `since` cursor fell behind the replay buffer; refetch state over REST and resubscribe with a fresh cursor.\n- `{\"op\": \"error\", \"message\": \"...\"}` — invalid op, unknown channel, or bad message format.\n\n**Reconnection:** tokens are single-use — mint a new one via POST /ws/token before reconnecting. To resume a channel without gaps, pass the last `seq` you received:\n```json\n{\"op\": \"subscribe\", \"channel\": \"fills\", \"since\": 42}\n```",
+        "description": "WebSocket endpoint for both public market data and per-account private channels. Requires a token from POST /ws/token:\n```\nwss://host/ws?token=YOUR_TOKEN\n```\nTokens are single-use and expire after 60 seconds.\n\nEvery client\u2192server and server\u2192client message is a JSON envelope tagged with an `op` field. Subscribe to one channel per message:\n```json\n{\"op\": \"subscribe\", \"channel\": \"trades\", \"market\": \"BTC-USDX-PERP\"}\n{\"op\": \"subscribe\", \"channel\": \"fills\"}\n```\nUnsubscribe with `{\"op\": \"unsubscribe\", \"channel\": \"...\", \"market\": \"...\"}`.\n\n**Public channels** (the token is always required to upgrade): `trades`, `book`, `candles` \u2014 each requires a `market` field.\n\n**Per-account channels** (scoped to the wallet that minted the token): `orders`, `fills`, `positions`, `balances`.\n\n**Server messages:**\n- `{\"op\": \"subscribed\", \"channel\": \"fills\", \"market\": null, \"seq_at_join\": 42}` \u2014 subscribe ack; `seq_at_join` is the channel's current sequence at attach time, used as the reconnect cursor.\n- `{\"op\": \"unsubscribed\", \"channel\": \"fills\", \"market\": null}` \u2014 unsubscribe ack.\n- `{\"op\": \"event\", \"channel\": \"fills\", \"market\": null, \"seq\": 43, \"payload\": {...}}` \u2014 a delivered event; `seq` is monotonic per channel.\n- `{\"op\": \"out_of_sync\", \"channel\": \"fills\", \"market\": null, \"oldest_seq\": 100}` \u2014 the requested `since` cursor fell behind the replay buffer; refetch state over REST and resubscribe with a fresh cursor.\n- `{\"op\": \"error\", \"message\": \"...\"}` \u2014 invalid op, unknown channel, or bad message format.\n\n**Reconnection:** tokens are single-use \u2014 mint a new one via POST /ws/token before reconnecting. To resume a channel without gaps, pass the last `seq` you received:\n```json\n{\"op\": \"subscribe\", \"channel\": \"fills\", \"since\": 42}\n```",
         "parameters": [
           {
             "name": "token",
@@ -1928,7 +1928,7 @@
         ],
         "responses": {
           "101": {
-            "description": "Switching Protocols — WebSocket upgrade."
+            "description": "Switching Protocols \u2014 WebSocket upgrade."
           }
         }
       }
@@ -1954,7 +1954,7 @@
         ],
         "responses": {
           "101": {
-            "description": "Switching Protocols — WebSocket upgrade."
+            "description": "Switching Protocols \u2014 WebSocket upgrade."
           }
         }
       }
@@ -2075,7 +2075,7 @@
           "Markets"
         ],
         "summary": "Venue statistics",
-        "description": "Aggregate venue statistics plus rolling unique-trader counts. Public — no authentication required.",
+        "description": "Aggregate venue statistics plus rolling unique-trader counts. Public \u2014 no authentication required.",
         "operationId": "fetchStats",
         "security": [],
         "responses": {
@@ -2098,7 +2098,7 @@
           "Markets"
         ],
         "summary": "Venue throughput history",
-        "description": "Per-second throughput ring buffer (up to 3600 points). Public — no authentication required.",
+        "description": "Per-second throughput ring buffer (up to 3600 points). Public \u2014 no authentication required.",
         "operationId": "fetchStatsHistory",
         "security": [],
         "responses": {
@@ -2124,7 +2124,7 @@
           "Markets"
         ],
         "summary": "Aggregate service health",
-        "description": "Aggregate health of indexer/engine/oracle/bots for status pages. Public — no authentication required.",
+        "description": "Aggregate health of indexer/engine/oracle/bots for status pages. Public \u2014 no authentication required.",
         "operationId": "fetchStatus",
         "security": [],
         "responses": {
@@ -2147,7 +2147,7 @@
           "Funding"
         ],
         "summary": "Funding premium-index samples",
-        "description": "Dense per-tick premium-index samples (60s cadence, up to 480 points = 8h). Public — no authentication required.",
+        "description": "Dense per-tick premium-index samples (60s cadence, up to 480 points = 8h). Public \u2014 no authentication required.",
         "operationId": "fetchFundingSamples",
         "security": [],
         "parameters": [
@@ -3038,7 +3038,7 @@
           "Funding"
         ],
         "summary": "Funding premium-index samples",
-        "description": "Dense per-tick premium-index samples (60s cadence, up to 480 points = 8h). Public — no authentication required.",
+        "description": "Dense per-tick premium-index samples (60s cadence, up to 480 points = 8h). Public \u2014 no authentication required.",
         "operationId": "fetchFundingSamplesV1",
         "security": [],
         "parameters": [
@@ -3177,7 +3177,7 @@
           "Markets"
         ],
         "summary": "Venue statistics",
-        "description": "Aggregate venue statistics plus rolling unique-trader counts. Public — no authentication required.",
+        "description": "Aggregate venue statistics plus rolling unique-trader counts. Public \u2014 no authentication required.",
         "operationId": "fetchStatsV1",
         "security": [],
         "responses": {
@@ -3210,7 +3210,7 @@
           "Markets"
         ],
         "summary": "Venue throughput history",
-        "description": "Per-second throughput ring buffer (up to 3600 points). Public — no authentication required.",
+        "description": "Per-second throughput ring buffer (up to 3600 points). Public \u2014 no authentication required.",
         "operationId": "fetchStatsHistoryV1",
         "security": [],
         "responses": {
@@ -3898,7 +3898,7 @@
           "Account"
         ],
         "summary": "Get rate limit status",
-        "description": "Returns the authenticated caller's rate limit tier, effective request ceiling, remaining requests, and reset timestamp — the same data surface as the X-RateLimit-* response headers, exposed as a queryable resource. This endpoint does not consume a rate limit token, so it can be polled freely to self-manage request pacing without depleting the caller's budget. For HMAC API keys with a per-key rate, the reported values are the binding minimum of the key bucket and the owner bucket. For unlimited-tier callers (gateway keys), `limit`, `remaining`, and `reset_at_ms` are null.",
+        "description": "Returns the authenticated caller's rate limit tier, effective request ceiling, remaining requests, and reset timestamp \u2014 the same data surface as the X-RateLimit-* response headers, exposed as a queryable resource. This endpoint does not consume a rate limit token, so it can be polled freely to self-manage request pacing without depleting the caller's budget. For HMAC API keys with a per-key rate, the reported values are the binding minimum of the key bucket and the owner bucket. For unlimited-tier callers (gateway keys), `limit`, `remaining`, and `reset_at_ms` are null.",
         "operationId": "fetchRateLimitStatusV1",
         "security": [
           {
@@ -4150,7 +4150,7 @@
           "Account"
         ],
         "summary": "List your fills",
-        "description": "Returns up to 1000 fills for the authenticated account, newest first. Fills are trade executions resulting from order matches — each fill carries the matched price, quantity, fee, and whether it was the taker or maker side.",
+        "description": "Returns up to 1000 fills for the authenticated account, newest first. Fills are trade executions resulting from order matches \u2014 each fill carries the matched price, quantity, fee, and whether it was the taker or maker side.",
         "security": [
           {
             "hmacAuth": []
@@ -4473,7 +4473,7 @@
       },
       "AdlEventRecord": {
         "type": "object",
-        "description": "Single ADL settlement (insurance fund depleted → counterparty closures). v0.21.",
+        "description": "Single ADL settlement (insurance fund depleted \u2192 counterparty closures). v0.21.",
         "properties": {
           "market_id": {
             "type": "string"
@@ -4733,7 +4733,7 @@
       },
       "OrderRequest": {
         "type": "object",
-        "description": "Order placement request. Supports plain `Limit` / `Market` orders and five conditional order types (`StopLimit`, `StopMarket`, `TakeProfitLimit`, `TakeProfitMarket`, `TrailingStop`). Field requirements depend on `order_type`:\n\n- **Limit-family** (`Limit`, `StopLimit`, `TakeProfitLimit`) require a limit `price`.\n- **Triggerable, non-trailing** orders (`StopLimit`, `StopMarket`, `TakeProfitLimit`, `TakeProfitMarket`) require a `trigger_price` (the legacy `stop_price` field is accepted as a fallback when `trigger_price` is absent).\n- **`TrailingStop`** is market-only — it fires as a market order — and requires `trailing_offset_bps`. It does not take a limit `price` or a `trigger_price` (the trigger anchor is derived from the mark price and the offset).",
+        "description": "Order placement request. Supports plain `Limit` / `Market` orders and six conditional order types (`StopLimit`, `StopMarket`, `TakeProfitLimit`, `TakeProfitMarket`, `TrailingStop`, `TrailingLimit`). Field requirements depend on `order_type`:\n\n- **Limit-family** (`Limit`, `StopLimit`, `TakeProfitLimit`) require a limit `price`.\n- **Triggerable, non-trailing** orders (`StopLimit`, `StopMarket`, `TakeProfitLimit`, `TakeProfitMarket`) require a `trigger_price` (the legacy `stop_price` field is accepted as a fallback when `trigger_price` is absent).\n- **`TrailingStop`** is market-only \u2014 it fires as a market order \u2014 and requires `trailing_offset_bps`. It does not take a limit `price` or a `trigger_price` (the trigger anchor is derived from the mark price and the offset).\n- **`TrailingLimit`** trails like `TrailingStop` but fires a limit order instead of a market order. It requires both `trailing_offset_bps` (the trailing trigger) and `limit_offset_bps` (the fire-time limit offset). It does not take `price`, `trigger_price`, or `stop_price`; the limit price is computed at fire time from the mark that crossed the offset.",
         "required": [
           "market_id",
           "side",
@@ -4754,7 +4754,7 @@
           },
           "order_type": {
             "type": "string",
-            "description": "Order type. `Limit` and `Market` are unconditional. The remaining five are conditional: `StopLimit` / `StopMarket` fire when the mark price crosses `trigger_price` in the adverse direction; `TakeProfitLimit` / `TakeProfitMarket` fire on the favorable direction; `TrailingStop` fires as a market order when the mark retraces from its best-seen extreme by `trailing_offset_bps`. See the schema description for per-type field requirements.",
+            "description": "Order type. `Limit` and `Market` are unconditional. The remaining six are conditional: `StopLimit` / `StopMarket` fire when the mark price crosses `trigger_price` in the adverse direction; `TakeProfitLimit` / `TakeProfitMarket` fire on the favorable direction; `TrailingStop` fires as a market order when the mark retraces from its best-seen extreme by `trailing_offset_bps`; `TrailingLimit` fires the same way but rests a limit order priced off the fire price by `limit_offset_bps`. See the schema description for per-type field requirements.",
             "enum": [
               "Limit",
               "Market",
@@ -4762,7 +4762,8 @@
               "StopMarket",
               "TakeProfitLimit",
               "TakeProfitMarket",
-              "TrailingStop"
+              "TrailingStop",
+              "TrailingLimit"
             ]
           },
           "price": {
@@ -4795,7 +4796,7 @@
               }
             ],
             "deprecated": true,
-            "description": "**Deprecated** — use `trigger_price` instead. Legacy trigger threshold for the stop / take-profit family. Accepted as a fallback only when `trigger_price` is absent; when both are supplied, `trigger_price` wins. Ignored for `Limit`, `Market`, and `TrailingStop` orders."
+            "description": "**Deprecated** \u2014 use `trigger_price` instead. Legacy trigger threshold for the stop / take-profit family. Accepted as a fallback only when `trigger_price` is absent; when both are supplied, `trigger_price` wins. Ignored for `Limit`, `Market`, `TrailingStop`, and `TrailingLimit` orders."
           },
           "trigger_price": {
             "oneOf": [
@@ -4806,15 +4807,24 @@
                 "type": "null"
               }
             ],
-            "description": "Canonical trigger threshold for triggerable, non-trailing orders (`StopLimit`, `StopMarket`, `TakeProfitLimit`, `TakeProfitMarket`), which require it (the legacy `stop_price` field is accepted as a fallback when this is omitted). Not used by `Limit`, `Market`, or `TrailingStop` orders."
+            "description": "Canonical trigger threshold for triggerable, non-trailing orders (`StopLimit`, `StopMarket`, `TakeProfitLimit`, `TakeProfitMarket`), which require it (the legacy `stop_price` field is accepted as a fallback when this is omitted). Not used by `Limit`, `Market`, `TrailingStop`, or `TrailingLimit` orders."
           },
           "trailing_offset_bps": {
             "type": [
               "integer",
               "null"
             ],
-            "minimum": 1,
-            "description": "Trailing-stop offset in basis points (1 bp = 0.01%). Required for `TrailingStop` orders and ignored for all other order types. The order fires as a market order once the mark price retraces from its best-seen extreme by this many basis points."
+            "minimum": 0,
+            "description": "Trailing offset in basis points (1 bp = 0.01%). Required for `TrailingStop` and `TrailingLimit` orders; ignored for all other order types. The trailing trigger fires once the mark price retraces from its best-seen extreme by this many basis points: `TrailingStop` fires a market order, `TrailingLimit` fires a limit order priced by `limit_offset_bps`. A value of `0` is accepted and fires the trigger at the first mark-price evaluation after placement (no retracement required)."
+          },
+          "limit_offset_bps": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 9999,
+            "description": "Offset in basis points for the fired limit price (`TrailingLimit` only; required together with `trailing_offset_bps`). When the trailing trigger fires at `fire_price`, the injected limit order rests at `fire_price` * (1 + offset) for buys / * (1 - offset) for sells, tick-rounded toward the tighter bound. A value of 0 rests the limit exactly at `fire_price`. Ignored for other order types."
           }
         }
       },
@@ -4936,6 +4946,13 @@
           "order_type": {
             "type": "string"
           },
+          "limit_offset_bps": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Fire-time limit offset in basis points, echoed for `TrailingLimit` orders (see the `OrderRequest.limit_offset_bps` placement field); null for other order types."
+          },
           "price": {
             "$ref": "#/components/schemas/Decimal"
           },
@@ -5039,7 +5056,7 @@
               "integer",
               "null"
             ],
-            "description": "Maximum requests per second. Also the burst capacity — the token bucket holds one second's worth of tokens — so `remaining` never exceeds it. Null for the unlimited tier."
+            "description": "Maximum requests per second. Also the burst capacity \u2014 the token bucket holds one second's worth of tokens \u2014 so `remaining` never exceeds it. Null for the unlimited tier."
           },
           "remaining": {
             "type": [
@@ -5145,7 +5162,7 @@
           "expires_at": {
             "type": "integer",
             "format": "int64",
-            "description": "Expiry as Unix ms. Optional — defaults to now+30d. Must be in [now+1d, now+90d]."
+            "description": "Expiry as Unix ms. Optional \u2014 defaults to now+30d. Must be in [now+1d, now+90d]."
           },
           "nonce": {
             "type": "integer",
@@ -5453,7 +5470,7 @@
           },
           "order_type": {
             "type": "string",
-            "description": "limit | market | stop_* | take_profit_* | trailing_stop"
+            "description": "limit | market | stop_* | take_profit_* | trailing_stop | trailing_limit"
           },
           "price": {
             "oneOf": [
