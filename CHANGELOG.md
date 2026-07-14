@@ -8,6 +8,21 @@ Pre-1.0 versioning convention:
 
 ---
 
+## [0.7.0](https://github.com/nexus-xyz/nexus-exchange-api/compare/v0.6.2...v0.7.0) (2026-07-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* remove operational endpoints from the public contract (/health, /ready) ([#45](https://github.com/nexus-xyz/nexus-exchange-api/issues/45))
+
+### Features
+
+* account cancel-on-disconnect endpoints (ENG-4913) ([#51](https://github.com/nexus-xyz/nexus-exchange-api/issues/51)) ([7807072](https://github.com/nexus-xyz/nexus-exchange-api/commit/78070729347ae97c0b378d51b3c00a2e8c988902))
+* add /v1/bridge Phase A (assets, deposit addresses, deposit tracking) ([#54](https://github.com/nexus-xyz/nexus-exchange-api/issues/54)) ([b0a51f6](https://github.com/nexus-xyz/nexus-exchange-api/commit/b0a51f67aec08b591d2c4d72111e835e191e5b5f))
+* expose conditional order types on OrderRequest (ENG-4415) ([#42](https://github.com/nexus-xyz/nexus-exchange-api/issues/42)) ([8f25a06](https://github.com/nexus-xyz/nexus-exchange-api/commit/8f25a062dd9dc682bf488180ecf72801e5d705f7))
+* remove operational endpoints from the public contract (/health, /ready) ([#45](https://github.com/nexus-xyz/nexus-exchange-api/issues/45)) ([c22beb4](https://github.com/nexus-xyz/nexus-exchange-api/commit/c22beb410979c6bdce32e579f771c42742b0446c))
+* TrailingLimit order type (ENG-4565) ([#50](https://github.com/nexus-xyz/nexus-exchange-api/issues/50)) ([0e90b75](https://github.com/nexus-xyz/nexus-exchange-api/commit/0e90b7579f3c9529e1452cddfcb3728454cd9de1))
+
 ## [0.6.2](https://github.com/nexus-xyz/nexus-exchange-api/compare/v0.6.1...v0.6.2) (2026-07-07)
 
 
