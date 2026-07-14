@@ -4210,19 +4210,15 @@
         }
       }
     },
-    "/v1/bridge/assets": {
+    "/api/v1/bridge/assets": {
       "get": {
         "tags": [
           "Bridge"
         ],
         "summary": "List bridgeable chains and assets",
-        "description": "Returns the supported chains and, per chain, the depositable assets (USDC, USDX) and withdrawable assets (USDX) with their decimals, minimum amounts, required confirmations, and fees.",
+        "description": "Returns the supported chains and, per chain, the depositable assets (USDC, USDX) and withdrawable assets (USDX) with their decimals, minimum amounts, required confirmations, and fees. Public catalog — no authentication required.",
         "operationId": "getBridgeAssets",
-        "security": [
-          {
-            "hmacAuth": []
-          }
-        ],
+        "security": [],
         "responses": {
           "200": {
             "description": "Supported bridge chains and assets.",
@@ -4234,16 +4230,13 @@
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
           "429": {
             "$ref": "#/components/responses/RateLimited"
           }
         }
       }
     },
-    "/v1/bridge/deposit-addresses": {
+    "/api/v1/bridge/deposit-addresses": {
       "post": {
         "tags": [
           "Bridge"
@@ -4326,7 +4319,7 @@
         }
       }
     },
-    "/v1/bridge/deposits": {
+    "/api/v1/bridge/deposits": {
       "get": {
         "tags": [
           "Bridge"
@@ -4412,7 +4405,7 @@
         }
       }
     },
-    "/v1/bridge/deposits/{id}": {
+    "/api/v1/bridge/deposits/{id}": {
       "get": {
         "tags": [
           "Bridge"
@@ -6262,11 +6255,14 @@
             "$ref": "#/components/schemas/TimestampMs"
           },
           "credited_at": {
-            "type": [
-              "integer",
-              "null"
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/TimestampMs"
+              },
+              {
+                "type": "null"
+              }
             ],
-            "format": "int64",
             "description": "Unix ms when the deposit was credited; null until `status` is `credited`."
           }
         }
