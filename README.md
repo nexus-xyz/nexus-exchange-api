@@ -96,6 +96,19 @@ curl -X POST https://exchange.nexus.xyz/api/exchange/orders \
   -d "$BODY"
 ```
 
+## Request conventions
+
+Every official client (SDK, CLI, MCP server) sends two advisory headers on **every** request:
+
+| Header | Value | Purpose |
+|---|---|---|
+| `X-Nexus-Api-Version` | released spec tag it was compiled against, e.g. `v0.7.0` (`vMAJOR.MINOR.PATCH`, matching the client's `.api-version`) | attribute traffic to a spec version; future compatibility handling |
+| `User-Agent` | `nexus-exchange-<lang>/<version>`, e.g. `nexus-exchange-rs/0.5.1` | per-client usage metering |
+
+Both are **advisory**: the server accepts requests when they are missing, malformed, or name an unknown tag — it never rejects or routes on them. They are **not** covered by the HMAC signature (they sit outside the [canonical string](#4-sign-requests)), so they are unauthenticated and are used for observability and usage metering only, never for authentication or access control.
+
+Clients derive `X-Nexus-Api-Version` from their existing `.api-version` pin — the same pin the drift checks enforce — so the header always reflects the exact contract the client was built against.
+
 ## WebSocket
 
 ```bash
