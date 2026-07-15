@@ -8,6 +8,13 @@ Pre-1.0 versioning convention:
 
 ---
 
+## [0.7.1](https://github.com/nexus-xyz/nexus-exchange-api/compare/v0.7.0...v0.7.1) (2026-07-15)
+
+
+### Features
+
+* document X-Nexus-Api-Version and User-Agent request conventions ([#55](https://github.com/nexus-xyz/nexus-exchange-api/issues/55)) ([c77c444](https://github.com/nexus-xyz/nexus-exchange-api/commit/c77c44475a2f09d165c4ba294095b6474491d092))
+
 ## [0.7.0](https://github.com/nexus-xyz/nexus-exchange-api/compare/v0.6.2...v0.7.0) (2026-07-14)
 
 
