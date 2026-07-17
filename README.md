@@ -20,6 +20,35 @@ Pre-1.0 semver — the minor version increments on breaking changes:
 | `0.X.0` | Breaking change — removed endpoint, renamed field, new required parameter |
 | `0.X.Y` | New feature or backwards-compatible fix |
 
+## API version support
+
+The version identifier is the released spec tag of this repository — `vMAJOR.MINOR.PATCH`, the same tag every official SDK pins to (drift-gated against its `.api-version`) and reports in [`X-Nexus-Api-Version`](#request-conventions).
+
+The exchange publishes the versions it supports at the **`/metadata`** endpoint, so a client — or an autonomous agent — can discover them programmatically instead of scraping docs:
+
+```json
+{ "current_api_version": "v0.7.1", "min_api_version": "v0.6.0" }
+```
+
+| Field | Meaning |
+|---|---|
+| `current_api_version` | latest released spec tag the edge serves |
+| `min_api_version` | oldest spec tag still accepted; a client pinned below this must upgrade |
+
+`/metadata` is the machine-readable source of truth; the values above are illustrative.
+
+### Pre-1.0 support window
+
+While the API is pre-1.0 (`v0.x.y`), breaking changes are frequent and `min_api_version` may advance with any breaking release. The support window is intentionally short: a released tag stays at or above `min_api_version` for **at least 14 days** after the release that supersedes it. This window widens substantially after 1.0 (GA).
+
+Pin your client to a released tag and either poll `/metadata` or watch [releases](https://github.com/nexus-xyz/nexus-exchange-api/releases), so you can upgrade before your pin falls below the minimum.
+
+### Below-minimum requests
+
+A request whose `X-Nexus-Api-Version` names a recognized tag older than `min_api_version` receives a machine-readable **`426 Upgrade Required`** with the structured error code `api_version_unsupported` and a link to the current spec — enough for tooling (and self-healing agents) to detect the skew, fetch the current spec, and upgrade. A missing, malformed, or unknown version header is treated as an unknown/legacy client and is **not** blocked by this policy (see [Request conventions](#request-conventions)).
+
+Because `X-Nexus-Api-Version` is [unauthenticated](#request-conventions), this gate is a compatibility courtesy, not a security control: a caller can spoof any version, but doing so only relaxes the version check — it never grants access that HMAC authentication wouldn't already allow. Authentication and authorization never depend on it.
+
 ## Authentication
 
 All endpoints require HMAC-SHA256 request signing, including market data.
@@ -105,7 +134,7 @@ Every official client (SDK, CLI, MCP server) sends two advisory headers on **eve
 | `X-Nexus-Api-Version` | released spec tag it was compiled against, e.g. `v0.7.0` (`vMAJOR.MINOR.PATCH`, matching the client's `.api-version`) | attribute traffic to a spec version; future compatibility handling |
 | `User-Agent` | `nexus-exchange-<lang>/<version>`, e.g. `nexus-exchange-rs/0.5.1` | per-client usage metering |
 
-Both are **advisory**: the server accepts requests when they are missing, malformed, or name an unknown tag — it never rejects or routes on them. They are **not** covered by the HMAC signature (they sit outside the [canonical string](#4-sign-requests)), so they are unauthenticated and are used for observability and usage metering only, never for authentication or access control.
+Both are **advisory**: the server accepts requests when they are missing, malformed, or name an unknown tag, and never uses them for authentication, authorization, or routing. They are **not** covered by the HMAC signature (they sit outside the [canonical string](#4-sign-requests)), so they are unauthenticated and are used for observability and usage metering only, never for access control. The one case where `X-Nexus-Api-Version` affects a response is the [API version support](#api-version-support) policy above, which may return `426` for a recognized tag below the published minimum — a compatibility gate, not a security boundary.
 
 Clients derive `X-Nexus-Api-Version` from their existing `.api-version` pin — the same pin the drift checks enforce — so the header always reflects the exact contract the client was built against.
 
