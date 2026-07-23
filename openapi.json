@@ -5492,6 +5492,7 @@
       },
       "Position": {
         "type": "object",
+        "description": "An open position with per-position risk detail. Enriched risk fields are derived strictly from indexer-mirrored state (no engine round-trip, to stay on the low-latency read path): when an input is not mirrored, the field is `null` and its companion `<field>_error` carries a machine-readable reason rather than a fabricated number. Monetary fields are lossless decimal strings; leverage fields are JSON numbers.",
         "properties": {
           "market_id": {
             "type": "string"
@@ -5517,6 +5518,96 @@
           },
           "liquidation_price": {
             "$ref": "#/components/schemas/Decimal"
+          },
+          "leverage": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Position leverage (the account's leverage multiplier for this position). Currently always `null`: deriving it needs the user's leverage setting or account equity/allocated margin, which the indexer does not mirror; when `null`, `leverage_error` carries the reason. Do not infer leverage from `margin_used` — that collapses to `1/initial_margin_rate`, a per-market constant, not the real leverage."
+          },
+          "leverage_error": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Machine-readable reason `leverage` is `null`, or `null` when `leverage` is populated. Currently always `margin_state_not_mirrored`."
+          },
+          "notional_value": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Decimal"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Position notional value (|size| × mark price), as a decimal string. `null` when the mark price is unavailable — see `notional_value_error`."
+          },
+          "notional_value_error": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Machine-readable reason `notional_value` is `null` (e.g. `mark_price_unavailable`), or `null` when populated."
+          },
+          "roe": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Decimal"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Return on equity: `unrealized_pnl / margin_used` (return on initial margin), as a decimal string. `null` when a required input is unavailable or margin is zero — see `roe_error`."
+          },
+          "roe_error": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Machine-readable reason `roe` is `null` (e.g. `mark_price_unavailable`, `margin_rate_unavailable`, `margin_used_zero`), or `null` when populated."
+          },
+          "margin_used": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Decimal"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Initial-margin requirement held against this position (`notional_value × initial_margin_rate`, under the engine's cross-margin model), as a decimal string. Isolated/custom margin allocations are not mirrored by the indexer. `null` when a required input is unavailable — see `margin_used_error`."
+          },
+          "margin_used_error": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Machine-readable reason `margin_used` is `null` (e.g. `mark_price_unavailable`, `margin_rate_unavailable`), or `null` when populated."
+          },
+          "max_leverage": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Maximum leverage allowed for this market (from market risk params), as a JSON number matching `/markets/{market_id}/risk-params`. `null` when market params are unavailable — see `max_leverage_error`."
+          },
+          "max_leverage_error": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Machine-readable reason `max_leverage` is `null` (e.g. `market_params_unavailable`), or `null` when populated."
+          },
+          "funding_paid": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Decimal"
+              }
+            ],
+            "description": "Cumulative funding paid on this position, as a decimal string, **paid-positive** (a positive value means the position paid funding). This is the negation of the received-positive `funding_pnl` on `/positions/pnl` — do not conflate the two. Always present: `\"0\"` when no funding has accrued. Bounded by the funding history the indexer retains."
           }
         }
       },
