@@ -348,7 +348,7 @@
     },
     "/ws-tokens": {
       "post": {
-        "operationId": "createWsToken",
+        "operationId": "createWsTokenLegacy",
         "tags": [
           "WebSocket"
         ],
@@ -378,7 +378,7 @@
     },
     "/ws/token": {
       "post": {
-        "operationId": "createWsTokenLegacy",
+        "operationId": "createWsToken",
         "tags": [
           "WebSocket"
         ],
