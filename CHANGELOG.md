@@ -8,6 +8,19 @@ Pre-1.0 versioning convention:
 
 ---
 
+## [0.7.2](https://github.com/nexus-xyz/nexus-exchange-api/compare/v0.7.1...v0.7.2) (2026-07-24)
+
+
+### Features
+
+* cursor pagination on list endpoints (ENG-5506) ([#53](https://github.com/nexus-xyz/nexus-exchange-api/issues/53)) ([9a6d211](https://github.com/nexus-xyz/nexus-exchange-api/commit/9a6d21174e11e73275e7e59e3a36f2874294e042))
+
+
+### Bug Fixes
+
+* clarify HMAC authentication applies to trading endpoints only ([#58](https://github.com/nexus-xyz/nexus-exchange-api/issues/58)) ([0c14e77](https://github.com/nexus-xyz/nexus-exchange-api/commit/0c14e77fdda5b444370524fca017ff883c8532a2))
+* correct RegisterAgent EIP-712 domain prose on /agents/register ([#52](https://github.com/nexus-xyz/nexus-exchange-api/issues/52)) ([7380ba5](https://github.com/nexus-xyz/nexus-exchange-api/commit/7380ba5d288a377851a70a79a2a060049a83eefe))
+
 ## [0.7.1](https://github.com/nexus-xyz/nexus-exchange-api/compare/v0.7.0...v0.7.1) (2026-07-15)
 
 
