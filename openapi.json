@@ -2233,6 +2233,48 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "502": {
+            "$ref": "#/components/responses/AuthoritativeMarginUnavailable"
+          }
+        }
+      }
+    },
+    "/account/state": {
+      "get": {
+        "tags": [
+          "Account"
+        ],
+        "summary": "Consolidated account state",
+        "description": "Full account state in a single call: the portfolio summary aggregates plus all open positions (`{ summary, positions }`). Saves clients from pairing `/account/summary` with `/positions`, matching Hyperliquid `clearinghouseState` ergonomics. Both parts are built from one coherent read, so `summary.open_positions_count` always matches the `positions` length, and the embedded `summary` is identical to the standalone `/account/summary` response. Fails closed with `502` when the engine-authoritative margin view is unavailable.",
+        "operationId": "fetchAccountState",
+        "security": [
+          {
+            "hmacAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Consolidated account state (summary aggregates + open positions).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountState"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "502": {
+            "$ref": "#/components/responses/AuthoritativeMarginUnavailable"
           }
         }
       }
@@ -3882,6 +3924,58 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "502": {
+            "$ref": "#/components/responses/AuthoritativeMarginUnavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/account/state": {
+      "servers": [
+        {
+          "url": "https://exchange.nexus.xyz",
+          "description": "Production (direct service)"
+        },
+        {
+          "url": "http://localhost:9090",
+          "description": "Local development"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Account"
+        ],
+        "summary": "Consolidated account state",
+        "description": "Full account state in a single call: the portfolio summary aggregates plus all open positions (`{ summary, positions }`). Saves clients from pairing `/account/summary` with `/positions`, matching Hyperliquid `clearinghouseState` ergonomics. Both parts are built from one coherent read, so `summary.open_positions_count` always matches the `positions` length, and the embedded `summary` is identical to the standalone `/account/summary` response. Fails closed with `502` when the engine-authoritative margin view is unavailable.",
+        "operationId": "fetchAccountStateV1",
+        "security": [
+          {
+            "hmacAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Consolidated account state (summary aggregates + open positions).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountState"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "502": {
+            "$ref": "#/components/responses/AuthoritativeMarginUnavailable"
           }
         }
       }
@@ -4616,6 +4710,16 @@
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/BridgeError"
+            }
+          }
+        }
+      },
+      "AuthoritativeMarginUnavailable": {
+        "description": "The engine-authoritative margin view is temporarily unavailable. Endpoints that derive balances from it (e.g. `withdrawable`) fail closed — returning this error rather than a locally-estimated, potentially unsafe figure. Transient; retry after a short delay.",
+        "content": {
+          "application/json": {
+            "example": {
+              "code": "authoritative_margin_unavailable"
             }
           }
         }
@@ -6109,9 +6213,38 @@
           "available_margin": {
             "$ref": "#/components/schemas/Decimal"
           },
+          "withdrawable": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Decimal"
+              }
+            ],
+            "description": "Wallet-withdrawable balance: engine-authoritative free margin floored at zero (`max(0, available_margin)`). Free margin already nets each position's initial margin and pre-trade order reservations out of equity, so this is exactly what can leave the account. A negative free margin (an underwater account) is clamped to `\"0\"` and never surfaced negative. Derived from the authoritative margin view — the endpoint fails closed with `502` rather than reporting a local estimate when that view is unavailable.",
+            "example": "8500.00"
+          },
           "early_access_allowed": {
             "type": "boolean",
             "description": "Present only when the early-access gate is active."
+          }
+        }
+      },
+      "AccountState": {
+        "type": "object",
+        "description": "Consolidated single-call account snapshot — the portfolio summary aggregates plus all open positions — matching Hyperliquid `clearinghouseState` ergonomics. Both parts are built from one coherent read, so `summary.open_positions_count` always equals the length of `positions`, and the embedded `summary` is identical to the standalone `/account/summary` response.",
+        "required": [
+          "summary",
+          "positions"
+        ],
+        "properties": {
+          "summary": {
+            "$ref": "#/components/schemas/AccountPortfolioSummary"
+          },
+          "positions": {
+            "type": "array",
+            "description": "All open positions for the account.",
+            "items": {
+              "$ref": "#/components/schemas/Position"
+            }
           }
         }
       },
