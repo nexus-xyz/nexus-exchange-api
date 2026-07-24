@@ -2336,6 +2336,9 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
           }
         }
       }
@@ -4054,6 +4057,9 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
           }
         }
       }
@@ -4787,12 +4793,10 @@
         "in": "query",
         "required": false,
         "schema": {
-          "type": "string",
-          "enum": [
-            "day",
-            "week",
-            "month",
-            "all"
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/PortfolioWindow"
+            }
           ],
           "default": "day"
         },
@@ -5925,9 +5929,25 @@
           }
         }
       },
+      "PortfolioWindow": {
+        "type": "string",
+        "enum": [
+          "day",
+          "week",
+          "month",
+          "all"
+        ],
+        "description": "Portfolio time-series window selector: `day`, `week`, `month`, or `all`. Shared by the `window` query parameter and the `window` echoed in the response."
+      },
       "PortfolioPoint": {
         "type": "object",
         "description": "One downsampled portfolio sample. Monetary fields are lossless decimal strings — parse with a decimal type, never a float.",
+        "required": [
+          "timestamp_ms",
+          "equity",
+          "pnl",
+          "volume"
+        ],
         "properties": {
           "timestamp_ms": {
             "$ref": "#/components/schemas/TimestampMs"
@@ -5938,7 +5958,7 @@
                 "$ref": "#/components/schemas/Decimal"
               }
             ],
-            "description": "Account equity at sample time (collateral balance + Σ unrealized PnL). Derived from the same source as `EquityPoint.equity`, so the two series never disagree."
+            "description": "Account equity at sample time (collateral balance + Σ unrealized PnL). Derived from the same underlying value as `EquityPoint.equity`; note `EquityPoint` serializes equity as a JSON number, whereas this is a lossless decimal string, so compare by decimal value rather than by wire representation."
           },
           "pnl": {
             "allOf": [
@@ -5961,14 +5981,17 @@
       "PortfolioHistory": {
         "type": "object",
         "description": "Portfolio time-series for the authenticated account over the requested window: equity, cumulative PnL, and cumulative volume, downsampled at a fixed per-window cadence and returned oldest first.",
+        "required": [
+          "window",
+          "cadence_ms",
+          "points"
+        ],
         "properties": {
           "window": {
-            "type": "string",
-            "enum": [
-              "day",
-              "week",
-              "month",
-              "all"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PortfolioWindow"
+              }
             ],
             "description": "The window that was served — echoes the `window` query parameter, or its `day` default."
           },
