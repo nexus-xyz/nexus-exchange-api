@@ -1787,7 +1787,18 @@
                     "entry_price": "49500.00",
                     "unrealized_pnl": "250.50",
                     "realized_pnl": "0.00",
-                    "liquidation_price": "42000.00"
+                    "liquidation_price": "42000.00",
+                    "notional_value": "25000.50",
+                    "notional_value_error": null,
+                    "roe": "0.2004",
+                    "roe_error": null,
+                    "margin_used": "1250.03",
+                    "margin_used_error": null,
+                    "max_leverage": 20,
+                    "max_leverage_error": null,
+                    "funding_paid": "12.50",
+                    "leverage": null,
+                    "leverage_error": "margin_state_not_mirrored"
                   }
                 ]
               }
@@ -4131,7 +4142,18 @@
                     "entry_price": "49500.00",
                     "unrealized_pnl": "250.50",
                     "realized_pnl": "0.00",
-                    "liquidation_price": "42000.00"
+                    "liquidation_price": "42000.00",
+                    "notional_value": "25000.50",
+                    "notional_value_error": null,
+                    "roe": "0.2004",
+                    "roe_error": null,
+                    "margin_used": "1250.03",
+                    "margin_used_error": null,
+                    "max_leverage": 20,
+                    "max_leverage_error": null,
+                    "funding_paid": "12.50",
+                    "leverage": null,
+                    "leverage_error": "margin_state_not_mirrored"
                   }
                 ]
               }
@@ -5589,10 +5611,10 @@
           },
           "max_leverage": {
             "type": [
-              "number",
+              "integer",
               "null"
             ],
-            "description": "Maximum leverage allowed for this market (from market risk params), as a JSON number matching `/markets/{market_id}/risk-params`. `null` when market params are unavailable — see `max_leverage_error`."
+            "description": "Maximum leverage allowed for this market (from market risk params), as an integer matching `max_leverage` on `/markets/{market_id}/risk-params`. `null` when market params are unavailable — see `max_leverage_error`."
           },
           "max_leverage_error": {
             "type": [
@@ -5607,7 +5629,7 @@
                 "$ref": "#/components/schemas/Decimal"
               }
             ],
-            "description": "Cumulative funding paid on this position, as a decimal string, **paid-positive** (a positive value means the position paid funding). This is the negation of the received-positive `funding_pnl` on `/positions/pnl` — do not conflate the two. Always present: `\"0\"` when no funding has accrued. Bounded by the funding history the indexer retains."
+            "description": "Cumulative funding paid on this position, as a decimal string. Sign is **paid-positive**: a positive value means the position has paid funding, a negative value means it has received funding. Always present: `\"0\"` when no funding has accrued. Bounded by the funding history the indexer retains."
           }
         }
       },
