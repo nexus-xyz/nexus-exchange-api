@@ -2234,6 +2234,9 @@
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
           "502": {
             "$ref": "#/components/responses/AuthoritativeMarginUnavailable"
           }
@@ -2266,6 +2269,9 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
           },
           "502": {
             "$ref": "#/components/responses/AuthoritativeMarginUnavailable"
@@ -3919,6 +3925,9 @@
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
           "502": {
             "$ref": "#/components/responses/AuthoritativeMarginUnavailable"
           }
@@ -3961,6 +3970,9 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
           },
           "502": {
             "$ref": "#/components/responses/AuthoritativeMarginUnavailable"
@@ -6207,7 +6219,8 @@
                 "$ref": "#/components/schemas/Decimal"
               }
             ],
-            "description": "Wallet-withdrawable balance: engine-authoritative free margin floored at zero (`max(0, available_margin)`). Free margin already nets each position's initial margin and pre-trade order reservations out of equity, so this is exactly what can leave the account. A negative free margin (an underwater account) is clamped to `\"0\"` and never surfaced negative. Derived from the authoritative margin view — the endpoint fails closed with `502` rather than reporting a local estimate when that view is unavailable."
+            "description": "Wallet-withdrawable balance: engine-authoritative free margin floored at zero (`max(0, available_margin)`). Free margin already nets each position's initial margin and pre-trade order reservations out of equity, so this is exactly what can leave the account. A negative free margin (an underwater account) is clamped to `\"0\"` and never surfaced negative. Derived from the authoritative margin view — the endpoint fails closed with `502` rather than reporting a local estimate when that view is unavailable.",
+            "example": "8500.00"
           },
           "early_access_allowed": {
             "type": "boolean",
@@ -6218,6 +6231,10 @@
       "AccountState": {
         "type": "object",
         "description": "Consolidated single-call account snapshot — the portfolio summary aggregates plus all open positions — matching Hyperliquid `clearinghouseState` ergonomics. Both parts are built from one coherent read, so `summary.open_positions_count` always equals the length of `positions`, and the embedded `summary` is identical to the standalone `/account/summary` response.",
+        "required": [
+          "summary",
+          "positions"
+        ],
         "properties": {
           "summary": {
             "$ref": "#/components/schemas/AccountPortfolioSummary"
