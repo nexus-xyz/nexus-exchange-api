@@ -8,6 +8,23 @@ Pre-1.0 versioning convention:
 
 ---
 
+## [0.7.2](https://github.com/nexus-xyz/nexus-exchange-api/compare/v0.7.1...v0.7.2) (2026-07-27)
+
+
+### Features
+
+* /account/fees endpoint (ENG-6447) ([#64](https://github.com/nexus-xyz/nexus-exchange-api/issues/64)) ([5bf9774](https://github.com/nexus-xyz/nexus-exchange-api/commit/5bf977429260f8565f28f2e9ad0ff566fa6b3804))
+* cursor pagination on list endpoints (ENG-5506) ([#53](https://github.com/nexus-xyz/nexus-exchange-api/issues/53)) ([9a6d211](https://github.com/nexus-xyz/nexus-exchange-api/commit/9a6d21174e11e73275e7e59e3a36f2874294e042))
+* enriched Position schema (per-position risk detail) (ENG-6445) ([#62](https://github.com/nexus-xyz/nexus-exchange-api/issues/62)) ([3050aa1](https://github.com/nexus-xyz/nexus-exchange-api/commit/3050aa14c0efdf4206745ddd6c1eaf1e1016bee8))
+* portfolio time-series endpoint (pnl + volume + window) (ENG-6444) ([#61](https://github.com/nexus-xyz/nexus-exchange-api/issues/61)) ([5439eb9](https://github.com/nexus-xyz/nexus-exchange-api/commit/5439eb9718d8fdddc9065c5dfe70844a23ab10c1))
+* withdrawable field + consolidated account-state endpoint (ENG-6446) ([#63](https://github.com/nexus-xyz/nexus-exchange-api/issues/63)) ([938ac62](https://github.com/nexus-xyz/nexus-exchange-api/commit/938ac629d6ab399575f84b14fe6b891c0c12cea3))
+
+
+### Bug Fixes
+
+* clarify HMAC authentication applies to trading endpoints only ([#58](https://github.com/nexus-xyz/nexus-exchange-api/issues/58)) ([0c14e77](https://github.com/nexus-xyz/nexus-exchange-api/commit/0c14e77fdda5b444370524fca017ff883c8532a2))
+* correct RegisterAgent EIP-712 domain prose on /agents/register ([#52](https://github.com/nexus-xyz/nexus-exchange-api/issues/52)) ([7380ba5](https://github.com/nexus-xyz/nexus-exchange-api/commit/7380ba5d288a377851a70a79a2a060049a83eefe))
+
 ## [0.7.1](https://github.com/nexus-xyz/nexus-exchange-api/compare/v0.7.0...v0.7.1) (2026-07-15)
 
 
