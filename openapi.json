@@ -1115,6 +1115,17 @@
                     "quantity": "0.1",
                     "time_in_force": "IOC"
                   }
+                },
+                "marketWithSlippageCap": {
+                  "summary": "Market order with a server-enforced 50 bp slippage cap",
+                  "value": {
+                    "market_id": "BTC-USDX-PERP",
+                    "side": "Buy",
+                    "order_type": "Market",
+                    "quantity": "0.1",
+                    "time_in_force": "IOC",
+                    "max_slippage_bps": 50
+                  }
                 }
               }
             }
@@ -5561,6 +5572,14 @@
             "minimum": 0,
             "maximum": 9999,
             "description": "Offset in basis points for the fired limit price (`TrailingLimit` only; required together with `trailing_offset_bps`). When the trailing trigger fires at `fire_price`, the injected limit order rests at `fire_price` * (1 + offset) for buys / * (1 - offset) for sells, tick-rounded toward the tighter bound. A value of 0 rests the limit exactly at `fire_price`. Ignored for other order types."
+          },
+          "max_slippage_bps": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "description": "Server-enforced slippage cap in basis points (1 bp = 0.01%). Omit the field for no cap. When set, the engine captures the book mid-price `(best_bid + best_ask) / 2` once at submission and requires the order's running fill VWAP to stay inside `mid ± mid × bps / 10000` as it walks the book. Fills made before the cap binds stand; the fill that would push the VWAP outside the band is not made and the unfilled remainder is cancelled — the order comes back on the normal `201` with `status` `Cancelled` and a `SlippageCap` cancellation reason, not as an error. Because the reference is the mid captured server-side at submission and the bound is on the running VWAP rather than on the worst individual fill, this is a stricter guarantee than a marketable limit price derived client-side from a previously sampled reference price.\n\nApplies to the market family: `Market`, plus `StopMarket`, `TakeProfitMarket`, and `TrailingStop`, which carry the field through their conversion and have the cap applied when they fire as market orders. Accepted but ignored on `Limit`, `StopLimit`, `TakeProfitLimit`, and `TrailingLimit` — a limit order already fills at its limit price or better.\n\nTwo edges worth knowing. A mid-price requires **both** sides of the book to be non-empty, so a capped order submitted while either side is empty is rejected with `InsufficientLiquidity` (a `400` on `POST /orders`, an `err` item on `POST /orders/batch`) — including when the empty side is the order's own and the order could otherwise have filled. And `0` does not mean \"no cap\": it collapses the band onto the mid exactly, so against any book with a non-zero spread the order cancels with zero fills. `POST /orders/preview` accepts the field but does not apply it — `expected_fill_vwap` always walks the full book."
           }
         }
       },
@@ -5688,6 +5707,13 @@
               "null"
             ],
             "description": "Fire-time limit offset in basis points, echoed for `TrailingLimit` orders (see the `OrderRequest.limit_offset_bps` placement field); null for other order types."
+          },
+          "max_slippage_bps": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Slippage cap in basis points, echoed for orders placed with one (see the `OrderRequest.max_slippage_bps` placement field); null for orders placed without a cap."
           },
           "price": {
             "$ref": "#/components/schemas/Decimal"
