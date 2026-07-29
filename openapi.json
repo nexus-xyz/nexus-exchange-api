@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Nexus Exchange API",
-    "description": "Perpetual futures exchange with HMAC API key authentication for trading endpoints, tiered rate limiting, and real-time WebSocket streaming across 32 markets.\n\n## Request conventions\n\nEvery official client (SDK, CLI, MCP server) sends two advisory headers on **every** request:\n\n- **`X-Nexus-Api-Version`** — the released spec tag the client was compiled/pinned against, e.g. `v0.7.0` (format `vMAJOR.MINOR.PATCH`, matching the client's `.api-version`). Lets the edge attribute traffic to a spec version and enables future compatibility handling.\n- **`User-Agent`** — `nexus-exchange-<lang>/<version>`, e.g. `nexus-exchange-rs/0.5.1`, for per-client usage metering.\n\nBoth are **advisory and optional**: the server accepts requests when a header is missing, malformed, or names an unknown tag — it never uses them for authentication, authorization, or routing, and treats a missing value as an unknown/legacy client. They are **not** part of the HMAC canonical signing string, so they are unauthenticated and can be altered in transit; never trust them for authentication, authorization, or access control. They are for observability and usage metering only. See the reusable `NexusApiVersion` and `UserAgent` header parameters under `components.parameters`.\n\n## API version support\n\nThe version identifier is the released spec tag of this contract (`vMAJOR.MINOR.PATCH`) — the tag every official SDK pins and reports in `X-Nexus-Api-Version`. The edge publishes the versions it accepts at the `/metadata` endpoint — served by the edge, not an operation in this contract — returning `current_api_version` (latest tag served) and `min_api_version` (oldest tag still accepted), so clients and agents can discover the support window programmatically.\n\nPre-1.0 (`v0.x.y`), breaking changes are frequent and `min_api_version` may advance with any breaking release; a released tag stays supported for at least 14 days after the release that supersedes it, and this window widens after 1.0. A request whose `X-Nexus-Api-Version` names a recognized tag older than `min_api_version` receives a machine-readable `426 Upgrade Required` (error code `api_version_unsupported`) with a link to the current spec, so tooling and agents can detect the skew and upgrade. A missing, malformed, or unknown version header is treated as an unknown/legacy client and is not blocked. Because the header is unauthenticated (excluded from the HMAC canonical string), this version gate is a compatibility courtesy, not a security control — authentication and authorization never depend on it, and spoofing the header only relaxes the gate.",
+    "description": "Perpetual futures exchange with HMAC API key authentication for trading endpoints, tiered rate limiting, and real-time WebSocket streaming across 32 markets.\n\n## Request conventions\n\nEvery official client (SDK, CLI, MCP server) sends two advisory headers on **every** request:\n\n- **`X-Nexus-Api-Version`** — the released spec tag the client was compiled/pinned against, e.g. `v0.7.0` (format `vMAJOR.MINOR.PATCH`, matching the client's `.api-version`). Lets the edge attribute traffic to a spec version and enables future compatibility handling.\n- **`User-Agent`** — `nexus-exchange-<lang>/<version>`, e.g. `nexus-exchange-rs/0.5.1`, for per-client usage metering.\n\nBoth are **advisory and optional**: the server accepts requests when a header is missing, malformed, or names an unknown tag — it never uses them for authentication, authorization, or routing, and treats a missing value as an unknown/legacy client. They are **not** part of the HMAC canonical signing string, so they are unauthenticated and can be altered in transit; never trust them for authentication, authorization, or access control. They are for observability and usage metering only. See the reusable `NexusApiVersion` and `UserAgent` header parameters under `components.parameters`.\n\n## API version support\n\nThe version identifier is the released spec tag of this contract (`vMAJOR.MINOR.PATCH`) — the tag every official SDK pins and reports in `X-Nexus-Api-Version`. The edge publishes the versions it accepts at the `/metadata` endpoint — served by the edge, not an operation in this contract — returning `current_api_version` (latest tag served) and `min_api_version` (oldest tag still accepted), so clients and agents can discover the support window programmatically.\n\nPre-1.0 (`v0.x.y`), breaking changes are frequent and `min_api_version` may advance with any breaking release; a released tag stays supported for at least 14 days after the release that supersedes it, and this window widens after 1.0. A request whose `X-Nexus-Api-Version` names a recognized tag older than `min_api_version` receives a machine-readable `426 Upgrade Required` (error code `api_version_unsupported`) with a link to the current spec, so tooling and agents can detect the skew and upgrade. A missing, malformed, or unknown version header is treated as an unknown/legacy client and is not blocked. Because the header is unauthenticated (excluded from the HMAC canonical string), this version gate is a compatibility courtesy, not a security control — authentication and authorization never depend on it, and spoofing the header only relaxes the gate.\n\n## Jurisdiction restrictions\n\nTwo independent geo controls can refuse a request with `403`. They are told apart by the machine-readable `code` in the body and the identical `x-nexus-block-reason` response header, never by the status code alone.\n\n- **`RESTRICTED_JURISDICTION`** — the venue's published sanctions list. It applies to **every** operation in this contract, reads included, so it is not repeated per-operation below. Treat it as possible on any request.\n- **`US_RESTRICTED`** — state-changing operations only. Market data, order-book, account and position reads, the WebSocket stream, order cancellation and withdrawals are unaffected: this is a read-only posture, not a block. The operations it can refuse declare a `403` explicitly.\n- **`GEO_UNRESOLVED`** — a state-changing operation could not be attributed to a country (no usable client address), so it failed closed. This is **not** a claim about where the caller is; it is an operational signal, kept distinct precisely so that a proxy misconfiguration is never reported as \"you are in the United States\".\n\n**Do not retry any of them.** All three are permanent for the caller's origin: no amount of backoff changes the outcome, and a retry loop against a permanent condition is the failure mode this taxonomy exists to prevent. That is what separates a `403` here from `401` (re-authenticate, then retry) and `429` (back off, then retry). Surface it to the operator instead — and for `GEO_UNRESOLVED`, surface it as a configuration problem rather than a jurisdiction one.\n\nTreat an unrecognized `code` on a `403` that carries `x-nexus-block-reason` the same way: refused, permanent, not retryable. Codes are added additively, so a closed client-side enum will go stale.\n\nWhich controls are in force, and over which countries, is per-deployment configuration and is not part of this contract; testnet deployments are not subject to the write restriction. Write clients should handle the error regardless of which deployment they are pointed at.\n\n**Over WebSocket** there is no refusal frame, because there is no state-changing WebSocket operation: the inbound `/ws` envelope accepts `subscribe` and `unsubscribe` only, and order submission is REST-only. If a state-changing inbound op is ever added it must carry these same codes so both surfaces agree.",
     "version": "0.7.2"
   },
   "servers": [
@@ -1137,6 +1137,9 @@
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
+          "403": {
+            "$ref": "#/components/responses/RestrictedJurisdiction"
+          },
           "429": {
             "$ref": "#/components/responses/RateLimited"
           }
@@ -1252,6 +1255,9 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/RestrictedJurisdiction"
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
@@ -1420,6 +1426,9 @@
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
+          "403": {
+            "$ref": "#/components/responses/RestrictedJurisdiction"
+          },
           "404": {
             "description": "Order not found"
           },
@@ -1505,6 +1514,9 @@
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
+          "403": {
+            "$ref": "#/components/responses/RestrictedJurisdiction"
+          },
           "429": {
             "$ref": "#/components/responses/RateLimited"
           }
@@ -1553,6 +1565,9 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/RestrictedJurisdiction"
           },
           "404": {
             "description": "No open position for the account in this market (NoOpenPosition)."
@@ -1609,12 +1624,36 @@
             "$ref": "#/components/responses/Unauthorized"
           },
           "403": {
-            "description": "Crediting is administratively frozen",
+            "description": "Refused. Either crediting is administratively frozen (`credits_frozen`), or a jurisdiction control refused the write (`US_RESTRICTED` / `GEO_UNRESOLVED` / `RESTRICTED_JURISDICTION`) — the latter are permanent for the caller's origin and must not be retried. Branch on `code`, which for the jurisdiction reasons equals the `x-nexus-block-reason` header. See “Jurisdiction restrictions” in the API description.",
+            "headers": {
+              "x-nexus-block-reason": {
+                "$ref": "#/components/headers/XNexusBlockReason"
+              }
+            },
             "content": {
               "application/json": {
-                "example": {
-                  "code": "credits_frozen",
-                  "message": "USDX crediting is temporarily frozen by an administrator. Existing balances remain tradeable."
+                "examples": {
+                  "creditsFrozen": {
+                    "summary": "Crediting administratively frozen",
+                    "value": {
+                      "code": "credits_frozen",
+                      "message": "USDX crediting is temporarily frozen by an administrator. Existing balances remain tradeable."
+                    }
+                  },
+                  "usRestricted": {
+                    "summary": "US write restriction",
+                    "value": {
+                      "code": "US_RESTRICTED",
+                      "message": "This action is not available in the United States or to U.S. persons"
+                    }
+                  },
+                  "geoUnresolved": {
+                    "summary": "Origin could not be resolved; the write failed closed",
+                    "value": {
+                      "code": "GEO_UNRESOLVED",
+                      "message": "Unable to verify request origin; this action is unavailable"
+                    }
+                  }
                 }
               }
             }
@@ -2680,6 +2719,9 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/RestrictedJurisdiction"
           }
         }
       },
@@ -2753,6 +2795,9 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/RestrictedJurisdiction"
           },
           "429": {
             "description": "Cooldown not elapsed or cumulative cap reached"
@@ -3486,6 +3531,9 @@
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
+          "403": {
+            "$ref": "#/components/responses/RestrictedJurisdiction"
+          },
           "429": {
             "$ref": "#/components/responses/RateLimited"
           }
@@ -3609,6 +3657,9 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/RestrictedJurisdiction"
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
@@ -3790,6 +3841,9 @@
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
+          "403": {
+            "$ref": "#/components/responses/RestrictedJurisdiction"
+          },
           "404": {
             "description": "Order not found"
           },
@@ -3968,12 +4022,36 @@
             "$ref": "#/components/responses/Unauthorized"
           },
           "403": {
-            "description": "Crediting is administratively frozen",
+            "description": "Refused. Either crediting is administratively frozen (`credits_frozen`), or a jurisdiction control refused the write (`US_RESTRICTED` / `GEO_UNRESOLVED` / `RESTRICTED_JURISDICTION`) — the latter are permanent for the caller's origin and must not be retried. Branch on `code`, which for the jurisdiction reasons equals the `x-nexus-block-reason` header. See “Jurisdiction restrictions” in the API description.",
+            "headers": {
+              "x-nexus-block-reason": {
+                "$ref": "#/components/headers/XNexusBlockReason"
+              }
+            },
             "content": {
               "application/json": {
-                "example": {
-                  "code": "credits_frozen",
-                  "message": "USDX crediting is temporarily frozen by an administrator. Existing balances remain tradeable."
+                "examples": {
+                  "creditsFrozen": {
+                    "summary": "Crediting administratively frozen",
+                    "value": {
+                      "code": "credits_frozen",
+                      "message": "USDX crediting is temporarily frozen by an administrator. Existing balances remain tradeable."
+                    }
+                  },
+                  "usRestricted": {
+                    "summary": "US write restriction",
+                    "value": {
+                      "code": "US_RESTRICTED",
+                      "message": "This action is not available in the United States or to U.S. persons"
+                    }
+                  },
+                  "geoUnresolved": {
+                    "summary": "Origin could not be resolved; the write failed closed",
+                    "value": {
+                      "code": "GEO_UNRESOLVED",
+                      "message": "Unable to verify request origin; this action is unavailable"
+                    }
+                  }
                 }
               }
             }
@@ -4960,6 +5038,44 @@
           "application/json": {
             "example": {
               "code": "authoritative_margin_unavailable"
+            }
+          }
+        }
+      },
+      "RestrictedJurisdiction": {
+        "description": "Refused by a jurisdiction control. **Permanent for the caller's origin — do not retry.** Branch on the `code` (identical to the `x-nexus-block-reason` header): `US_RESTRICTED` for the US write restriction, `GEO_UNRESOLVED` when the origin could not be resolved and the write failed closed, or `RESTRICTED_JURISDICTION` for the sanctions list. Reads are never refused by the write restriction. See “Jurisdiction restrictions” in the API description.",
+        "headers": {
+          "x-nexus-block-reason": {
+            "$ref": "#/components/headers/XNexusBlockReason"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/JurisdictionError"
+            },
+            "examples": {
+              "usRestricted": {
+                "summary": "US write restriction",
+                "value": {
+                  "code": "US_RESTRICTED",
+                  "message": "This action is not available in the United States or to U.S. persons"
+                }
+              },
+              "geoUnresolved": {
+                "summary": "Origin could not be resolved; the write failed closed",
+                "value": {
+                  "code": "GEO_UNRESOLVED",
+                  "message": "Unable to verify request origin; this action is unavailable"
+                }
+              },
+              "restrictedJurisdiction": {
+                "summary": "Sanctions list — can also be returned on a read",
+                "value": {
+                  "code": "RESTRICTED_JURISDICTION",
+                  "message": "Access denied from restricted jurisdiction"
+                }
+              }
             }
           }
         }
@@ -7008,6 +7124,24 @@
             "description": "Unix ms when the deposit was credited; null until `status` is `credited`."
           }
         }
+      },
+      "JurisdictionError": {
+        "type": "object",
+        "description": "Error body returned with a `403` from a jurisdiction control. Flat `code`/`message`, matching the other top-level error bodies in this contract (`unauthorized`, `credits_frozen`) rather than the nested `BridgeError` envelope, which is scoped to `/v1/bridge`.",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Stable machine-readable reason, identical to the `x-nexus-block-reason` response header. One of `RESTRICTED_JURISDICTION` (sanctions list — reads and writes alike), `US_RESTRICTED` (US write restriction — state-changing operations only) or `GEO_UNRESOLVED` (the request's origin could not be resolved and the write failed closed; not a statement about the caller's location). Match on this, not on `message`. All three are permanent for the caller's origin and must not be retried; treat an unrecognized code the same way."
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable explanation. Wording is not stable and is not intended for programmatic matching."
+          }
+        }
       }
     },
     "headers": {
@@ -7016,6 +7150,12 @@
           "type": "string"
         },
         "description": "Opaque cursor for the next page. Present only when more results exist beyond this response; absent on the last page. Pass it back via the `cursor` query parameter to fetch the next page. The response body stays a bare array — pagination state rides only in this header."
+      },
+      "XNexusBlockReason": {
+        "schema": {
+          "type": "string"
+        },
+        "description": "Which jurisdiction control refused the request: `RESTRICTED_JURISDICTION` (sanctions list; any operation, reads included), `US_RESTRICTED` (US write restriction; state-changing operations only), or `GEO_UNRESOLVED` (a state-changing operation whose origin could not be resolved, failing closed). Always equal to the body's `code` — the header exists so a browser client can branch without reading the body. Deliberately not a closed enum: treat an unrecognized value as a permanent, non-retryable refusal. See “Jurisdiction restrictions” in the API description."
       }
     }
   }
