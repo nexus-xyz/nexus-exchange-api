@@ -54,8 +54,10 @@ oasdiff breaking /tmp/base.json openapi.json --fail-on ERR
 
 Versioning and the changelog are fully automated by
 [release-please](https://github.com/googleapis/release-please) — the
-**conventional commit type carries the intent**. Use these prefixes in your
-commit messages (and PR title):
+**conventional commit type carries the intent**. This repo squash-merges, and
+the squash commit's subject is taken from the **PR title**, so the PR title is
+the string release-please actually reads. Put the prefix there; use it in your
+commit messages too, but the title is what lands:
 
 | Commit | Example | Effect |
 |---|---|---|
@@ -67,11 +69,20 @@ commit messages (and PR title):
 A breaking change is signalled either by the `!` (e.g. `feat!:`) or by a
 `BREAKING CHANGE:` footer in the commit body. Both bump the minor version.
 
+Prefer the `!`. The footer only counts if it is in a **commit** body: the squash
+commit's body is assembled from the commit messages on the branch, never from
+the PR description, so a `BREAKING CHANGE:` footer written only in the PR
+description is dropped at merge and the break ships as a patch.
+
 You do **not** edit the version yourself. Spec PRs land on `main` without a
 version bump; release-please accumulates merged commits into a running release
 PR. Merging that release PR is the deliberate, batched release — it bumps
 `$.info.version` inside `openapi.json`, updates `CHANGELOG.md`, tags `vX.Y.Z`,
 cuts a GitHub Release, and attaches `openapi.json` as a release asset.
+
+Squash-and-merge is the only method enabled here, and the source branch is
+deleted on merge — so one PR is always one commit on `main`, which is what makes
+the title-carries-the-intent rule above hold.
 
 ## Versioning and the breaking-change policy
 
