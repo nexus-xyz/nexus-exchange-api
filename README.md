@@ -5,11 +5,45 @@
 
 REST and WebSocket API for [Nexus Exchange](https://exchange.nexus.xyz) — a perpetual futures exchange for crypto, equities, FX, and commodities.
 
-- **Base URL:** `https://exchange.nexus.xyz/api/exchange`
+- **Base URL:** `https://exchange.nexus.xyz/api/exchange` — the current default, and it serves **testnet** (play funds). See [Networks](#networks) for the per-network bases.
 - **Direct-service base:** `https://exchange.nexus.xyz/api/v1` — the market-data and account/trading surfaces are also served directly by their backend service under an `/api/v1` prefix (routed by the load balancer). Both bases are live in parallel; the same HMAC signing applies, over the full request path (e.g. `/api/v1/orders`).
 - **OpenAPI spec:** [`openapi.json`](./openapi.json)
 - **Changelog:** [`CHANGELOG.md`](./CHANGELOG.md)
 - **Interactive docs:** [exchange.nexus.xyz/api-docs](https://exchange.nexus.xyz/api-docs)
+
+## Networks
+
+The API is served per **network**, and the network is the *host* — not a path, not a header, and not a release channel. There are two public networks:
+
+| Network | REST base | WebSocket | Funds |
+|---|---|---|---|
+| **Testnet** | `https://api.testnet.nexus.xyz/v1` | `wss://api.testnet.nexus.xyz` | play — synthetic USDX from the faucet, no real-world value |
+| **Mainnet** | `https://api.nexus.xyz/v1` | `wss://api.nexus.xyz` | **real** — USDX bridged from Ethereum Mainnet |
+
+WebSocket paths are identical on both hosts: market data at `…/stream`, authenticated at `…/ws?token=…`. `local` (`http://localhost:9090`) is a developer convenience, not a public network.
+
+The spec carries this table as machine-readable `servers` entries plus an `x-nexus-networks` map — **the single place to copy the mapping from.** Mainnet is the real-funds exchange running against Ethereum Mainnet via the USDX bridge; it is not a Nexus L1 chain.
+
+> **Status:** the two `api.` hostnames are decided and documented, but DNS/TLS is a separate infra change and they do not resolve yet. Keep pinning `https://exchange.nexus.xyz/api/exchange` until the cutover; the entries are published now so clients can build the network axis against a stable contract.
+
+### Four things to get right
+
+**Mainnet is deliberately off-pattern.** It takes the bare `api.nexus.xyz`, not `api.mainnet.nexus.xyz`. So `api.{network}.nexus.xyz` is wrong for exactly one network — the real-funds one — and it resolves fine in dev, staging and testnet. The failure only ever shows up on the environment you cannot rehearse. Use the explicit map with mainnet as a named case; never interpolate.
+
+**Credentials do not cross networks.** Session tokens, HMAC API keys, and agent keys are minted per network and are invalid on any other, so a key that leaks or is misconfigured on testnet cannot sign for real funds. Switching network means switching credentials. The EIP-712 signing domain is network-scoped too, which is what makes an action signed for one network invalid on the other — never replay a signature, nonce, or agent registration across networks.
+
+**There is no default network, and no blanket redirect.** Select one explicitly. `exchange.nexus.xyz` serves **testnet**, so when it retires its traffic belongs on `api.testnet.nexus.xyz` — never on the bare `api.nexus.xyz`. Redirecting the legacy host at mainnet would silently move play-funds clients onto real funds.
+
+**Changing base changes what you sign.** The request path is part of the [HMAC canonical string](#4-sign-requests). Migration is two independent steps, in order:
+
+1. base path, same host: `https://exchange.nexus.xyz/api/exchange/orders` → `https://exchange.nexus.xyz/api/v1/orders`
+2. host: `https://exchange.nexus.xyz/api/v1/orders` → `https://api.testnet.nexus.xyz/v1/orders`
+
+Each step changes the signed path (`/api/exchange/orders` → `/api/v1/orders` → `/v1/orders`). Repointing the base URL without updating the signed path yields `401`, not a routing error. Note the new hosts use `/v1`, not `/api/v1`: the `api.` prefix moved into the hostname rather than being repeated in the path.
+
+### Discovering targets at runtime
+
+Rather than hardcoding the table above, read [`/metadata`](#api-version-support) — it publishes the network the host serves, the per-network REST and WebSocket targets, and the EIP-712 signing domain. The `Metadata` schema in the spec documents the payload.
 
 ## Versioning
 
@@ -47,10 +81,15 @@ export KEY_ID="nx_..."
 export SECRET="...hex..."
 ```
 
+The key is scoped to the [network](#networks) whose host you created it on and is
+invalid on any other — mint a separate key per network rather than reusing one.
+
 ### 3. Deposit collateral
 
 Before placing orders you need a balance. On testnet the deposit endpoint
-acts as a faucet — no real funds are required.
+acts as a faucet — the USDX is synthetic and no real funds are required. On
+mainnet there is no faucet: collateral is real USDX bridged from Ethereum
+Mainnet. See [Networks](#networks).
 
 ```bash
 TS=$(date +%s%3N)
@@ -113,18 +152,34 @@ Clients derive `X-Nexus-Api-Version` from their existing `.api-version` pin — 
 
 The version identifier is the released spec tag of this repository — `vMAJOR.MINOR.PATCH`, the same tag every official SDK pins to (drift-gated against its `.api-version`) and reports in [`X-Nexus-Api-Version`](#request-conventions).
 
-The exchange publishes the versions it supports at the **`/metadata`** endpoint — served by the edge, not an operation in this spec — so a client, or an autonomous agent, can discover them programmatically instead of scraping docs:
+The exchange publishes the versions it supports — and the [network](#networks) targets it serves — at the **`/metadata`** endpoint, served by the edge at each network's own host rather than as an operation in this spec. A client, or an autonomous agent, can discover both programmatically instead of scraping docs:
 
 ```json
-{ "current_api_version": "v0.7.1", "min_api_version": "v0.6.0" }
+{
+  "current_api_version": "v0.7.1",
+  "min_api_version": "v0.6.0",
+  "network": "testnet",
+  "ws_url": "wss://api.testnet.nexus.xyz",
+  "signing_domain": { "name": "Nexus Exchange", "version": "1", "chain_id": null },
+  "networks": {
+    "testnet": { "network": "testnet", "rest_base": "https://api.testnet.nexus.xyz/v1", "funds": "play" },
+    "mainnet": { "network": "mainnet", "rest_base": "https://api.nexus.xyz/v1", "funds": "real" }
+  }
+}
 ```
 
 | Field | Meaning |
 |---|---|
 | `current_api_version` | latest released spec tag the edge serves |
 | `min_api_version` | oldest spec tag still accepted; a client pinned below this must upgrade |
+| `network` | the [network](#networks) this host serves — the one your credentials must belong to |
+| `ws_url` | WebSocket origin for that network (`…/stream` public, `…/ws?token=…` authenticated) |
+| `signing_domain` | network-scoped EIP-712 domain; `chain_id` is `null` when the edge does not publish it |
+| `networks` | every network the edge knows about, keyed by identifier — resolve a sibling target without a hardcoded host map |
 
-`/metadata` is the machine-readable source of truth; the values above are illustrative.
+`/metadata` is the machine-readable source of truth; the values above are illustrative. Only the two version fields are guaranteed — an older edge may omit the rest, in which case fall back to the spec's `x-nexus-networks` map.
+
+Two values carry a fail-safe rule. A `network` you do not recognize must **not** be assumed to be play funds: treat it as real funds and confirm before acting. And a `signing_domain.chain_id` that is `null` or absent means *the edge did not publish it* — it does not mean `0`, and it is not a cue to fall back to a cached or default value. A client that cannot obtain a `chain_id` should refuse to sign, because the wrong domain either fails verification or produces a signature valid on a network you did not intend. The `Metadata`, `NetworkTarget`, and `SigningDomain` schemas in the spec document the full payload.
 
 ### Pre-1.0 support window
 
@@ -153,6 +208,8 @@ wscat -c "wss://exchange.nexus.xyz/api/exchange/ws?token=$TOKEN"
 {"op": "subscribe", "channel": "orders"}
 {"op": "subscribe", "channel": "book", "market": "BTC-USDX-PERP"}
 ```
+
+The example uses the current base. On a per-network host the WebSocket origin is the host itself — `wss://api.testnet.nexus.xyz/ws?token=…` (market data at `/stream`) — with no `/api/exchange` prefix. The token must be minted on the **same** network you connect to; tokens are network-scoped like every other credential, so one minted on testnet will not upgrade a mainnet connection. See [Networks](#networks).
 
 ## Rate limits
 
