@@ -35,7 +35,7 @@
         "ws_url": "wss://api.testnet.nexus.xyz",
         "ws_market_data_url": "wss://api.testnet.nexus.xyz/stream",
         "ws_authenticated_url": "wss://api.testnet.nexus.xyz/ws",
-        "eip712_domain": {
+        "signing_domain": {
           "name": "Nexus Exchange",
           "version": "1",
           "chain_id": null
@@ -51,7 +51,7 @@
         "ws_url": "wss://api.nexus.xyz",
         "ws_market_data_url": "wss://api.nexus.xyz/stream",
         "ws_authenticated_url": "wss://api.nexus.xyz/ws",
-        "eip712_domain": {
+        "signing_domain": {
           "name": "Nexus Exchange",
           "version": "1",
           "chain_id": null
@@ -67,7 +67,7 @@
         "ws_url": "ws://localhost:9090",
         "ws_market_data_url": "ws://localhost:9090/stream",
         "ws_authenticated_url": "ws://localhost:9090/ws",
-        "eip712_domain": {
+        "signing_domain": {
           "name": "Nexus Exchange",
           "version": "1",
           "chain_id": null
@@ -75,7 +75,7 @@
         "description": "A locally run indexer. Not a public network and not a deployment target — never a fallback when a public host fails to resolve, since silently succeeding against localhost hides a misconfigured client."
       }
     },
-    "eip712_domain_note": "`chain_id: null` means this document does not publish the value, not that the value is zero. The EIP-712 signing domain is per-network and server-authoritative: read `signing_domain` from `/metadata` (see the `Metadata` schema) for the network you are connected to. A client that cannot obtain a `chain_id` must **refuse to sign** rather than guess or default — a wrong domain either fails verification or, worse, produces a signature valid on a different network. `name` and `version` are the values this contract has always documented for `POST /agents/register`; `/metadata` remains authoritative for all three fields."
+    "signing_domain_note": "Each entry's `signing_domain` is the EIP-712 domain for that network, deliberately spelled the same as `/metadata`'s `signing_domain` and the `SigningDomain` schema, so one name means one thing across the static map, the runtime payload, and generated clients.\n\n`chain_id: null` means this document does not publish the value, not that the value is zero. The signing domain is per-network and server-authoritative: read `signing_domain` from `/metadata` (see the `Metadata` schema) for the network you are connected to. A client that cannot obtain a `chain_id` must **refuse to sign** rather than guess or default — a wrong domain either fails verification or, worse, produces a signature valid on a different network. `name` and `version` are the values this contract has always documented for `POST /agents/register`; `/metadata` remains authoritative for all three fields."
   },
   "tags": [
     {
@@ -2834,11 +2834,11 @@
       "servers": [
         {
           "url": "https://exchange.nexus.xyz",
-          "description": "Production (direct service)"
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
         },
         {
           "url": "http://localhost:9090",
-          "description": "Local development"
+          "description": "Local development — not a public network."
         }
       ],
       "get": {
@@ -2881,11 +2881,11 @@
       "servers": [
         {
           "url": "https://exchange.nexus.xyz",
-          "description": "Production (direct service)"
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
         },
         {
           "url": "http://localhost:9090",
-          "description": "Local development"
+          "description": "Local development — not a public network."
         }
       ],
       "get": {
@@ -2950,11 +2950,11 @@
       "servers": [
         {
           "url": "https://exchange.nexus.xyz",
-          "description": "Production (direct service)"
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
         },
         {
           "url": "http://localhost:9090",
-          "description": "Local development"
+          "description": "Local development — not a public network."
         }
       ],
       "get": {
@@ -2991,11 +2991,11 @@
       "servers": [
         {
           "url": "https://exchange.nexus.xyz",
-          "description": "Production (direct service)"
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
         },
         {
           "url": "http://localhost:9090",
-          "description": "Local development"
+          "description": "Local development — not a public network."
         }
       ],
       "get": {
@@ -3055,11 +3055,11 @@
       "servers": [
         {
           "url": "https://exchange.nexus.xyz",
-          "description": "Production (direct service)"
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
         },
         {
           "url": "http://localhost:9090",
-          "description": "Local development"
+          "description": "Local development — not a public network."
         }
       ],
       "get": {
@@ -3131,11 +3131,11 @@
       "servers": [
         {
           "url": "https://exchange.nexus.xyz",
-          "description": "Production (direct service)"
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
         },
         {
           "url": "http://localhost:9090",
-          "description": "Local development"
+          "description": "Local development — not a public network."
         }
       ],
       "get": {
@@ -3234,11 +3234,11 @@
       "servers": [
         {
           "url": "https://exchange.nexus.xyz",
-          "description": "Production (direct service)"
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
         },
         {
           "url": "http://localhost:9090",
-          "description": "Local development"
+          "description": "Local development — not a public network."
         }
       ],
       "get": {
@@ -3295,11 +3295,11 @@
       "servers": [
         {
           "url": "https://exchange.nexus.xyz",
-          "description": "Production (direct service)"
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
         },
         {
           "url": "http://localhost:9090",
-          "description": "Local development"
+          "description": "Local development — not a public network."
         }
       ],
       "get": {
@@ -3352,11 +3352,11 @@
       "servers": [
         {
           "url": "https://exchange.nexus.xyz",
-          "description": "Production (direct service)"
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
         },
         {
           "url": "http://localhost:9090",
-          "description": "Local development"
+          "description": "Local development — not a public network."
         }
       ],
       "get": {
@@ -3396,11 +3396,11 @@
       "servers": [
         {
           "url": "https://exchange.nexus.xyz",
-          "description": "Production (direct service)"
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
         },
         {
           "url": "http://localhost:9090",
-          "description": "Local development"
+          "description": "Local development — not a public network."
         }
       ],
       "get": {
@@ -3434,11 +3434,11 @@
       "servers": [
         {
           "url": "https://exchange.nexus.xyz",
-          "description": "Production (direct service)"
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
         },
         {
           "url": "http://localhost:9090",
-          "description": "Local development"
+          "description": "Local development — not a public network."
         }
       ],
       "get": {
@@ -3467,11 +3467,11 @@
       "servers": [
         {
           "url": "https://exchange.nexus.xyz",
-          "description": "Production (direct service)"
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
         },
         {
           "url": "http://localhost:9090",
-          "description": "Local development"
+          "description": "Local development — not a public network."
         }
       ],
       "get": {
@@ -3503,11 +3503,11 @@
       "servers": [
         {
           "url": "https://exchange.nexus.xyz",
-          "description": "Production (direct service)"
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
         },
         {
           "url": "http://localhost:9090",
-          "description": "Local development"
+          "description": "Local development — not a public network."
         }
       ],
       "post": {
@@ -3632,11 +3632,11 @@
       "servers": [
         {
           "url": "https://exchange.nexus.xyz",
-          "description": "Production (direct service)"
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
         },
         {
           "url": "http://localhost:9090",
-          "description": "Local development"
+          "description": "Local development — not a public network."
         }
       ],
       "post": {
@@ -3691,11 +3691,11 @@
       "servers": [
         {
           "url": "https://exchange.nexus.xyz",
-          "description": "Production (direct service)"
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
         },
         {
           "url": "http://localhost:9090",
-          "description": "Local development"
+          "description": "Local development — not a public network."
         }
       ],
       "post": {
@@ -3747,11 +3747,11 @@
       "servers": [
         {
           "url": "https://exchange.nexus.xyz",
-          "description": "Production (direct service)"
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
         },
         {
           "url": "http://localhost:9090",
-          "description": "Local development"
+          "description": "Local development — not a public network."
         }
       ],
       "delete": {
@@ -3873,11 +3873,11 @@
       "servers": [
         {
           "url": "https://exchange.nexus.xyz",
-          "description": "Production (direct service)"
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
         },
         {
           "url": "http://localhost:9090",
-          "description": "Local development"
+          "description": "Local development — not a public network."
         }
       ],
       "get": {
@@ -3937,11 +3937,11 @@
       "servers": [
         {
           "url": "https://exchange.nexus.xyz",
-          "description": "Production (direct service)"
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
         },
         {
           "url": "http://localhost:9090",
-          "description": "Local development"
+          "description": "Local development — not a public network."
         }
       ],
       "get": {
@@ -3986,11 +3986,11 @@
       "servers": [
         {
           "url": "https://exchange.nexus.xyz",
-          "description": "Production (direct service)"
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
         },
         {
           "url": "http://localhost:9090",
-          "description": "Local development"
+          "description": "Local development — not a public network."
         }
       ],
       "post": {
@@ -4072,11 +4072,11 @@
       "servers": [
         {
           "url": "https://exchange.nexus.xyz",
-          "description": "Production (direct service)"
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
         },
         {
           "url": "http://localhost:9090",
-          "description": "Local development"
+          "description": "Local development — not a public network."
         }
       ],
       "get": {
@@ -4124,11 +4124,11 @@
       "servers": [
         {
           "url": "https://exchange.nexus.xyz",
-          "description": "Production (direct service)"
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
         },
         {
           "url": "http://localhost:9090",
-          "description": "Local development"
+          "description": "Local development — not a public network."
         }
       ],
       "get": {
@@ -4169,11 +4169,11 @@
       "servers": [
         {
           "url": "https://exchange.nexus.xyz",
-          "description": "Production (direct service)"
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
         },
         {
           "url": "http://localhost:9090",
-          "description": "Local development"
+          "description": "Local development — not a public network."
         }
       ],
       "get": {
@@ -4215,11 +4215,11 @@
       "servers": [
         {
           "url": "https://exchange.nexus.xyz",
-          "description": "Production (direct service)"
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
         },
         {
           "url": "http://localhost:9090",
-          "description": "Local development"
+          "description": "Local development — not a public network."
         }
       ],
       "get": {
@@ -4279,11 +4279,11 @@
       "servers": [
         {
           "url": "https://exchange.nexus.xyz",
-          "description": "Production (direct service)"
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
         },
         {
           "url": "http://localhost:9090",
-          "description": "Local development"
+          "description": "Local development — not a public network."
         }
       ],
       "get": {
@@ -4341,11 +4341,11 @@
       "servers": [
         {
           "url": "https://exchange.nexus.xyz",
-          "description": "Production (direct service)"
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
         },
         {
           "url": "http://localhost:9090",
-          "description": "Local development"
+          "description": "Local development — not a public network."
         }
       ],
       "get": {
@@ -4387,11 +4387,11 @@
       "servers": [
         {
           "url": "https://exchange.nexus.xyz",
-          "description": "Production (direct service)"
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
         },
         {
           "url": "http://localhost:9090",
-          "description": "Local development"
+          "description": "Local development — not a public network."
         }
       ],
       "get": {
@@ -4481,11 +4481,11 @@
       "servers": [
         {
           "url": "https://exchange.nexus.xyz",
-          "description": "Production (direct service)"
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
         },
         {
           "url": "http://localhost:9090",
-          "description": "Local development"
+          "description": "Local development — not a public network."
         }
       ],
       "get": {
@@ -4548,11 +4548,11 @@
       "servers": [
         {
           "url": "https://exchange.nexus.xyz",
-          "description": "Production (direct service)"
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
         },
         {
           "url": "http://localhost:9090",
-          "description": "Local development"
+          "description": "Local development — not a public network."
         }
       ],
       "get": {
@@ -4611,11 +4611,11 @@
       "servers": [
         {
           "url": "https://exchange.nexus.xyz",
-          "description": "Production (direct service)"
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
         },
         {
           "url": "http://localhost:9090",
-          "description": "Local development"
+          "description": "Local development — not a public network."
         }
       ],
       "get": {
@@ -4689,6 +4689,16 @@
       }
     },
     "/api/v1/bridge/assets": {
+      "servers": [
+        {
+          "url": "https://exchange.nexus.xyz",
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
+        },
+        {
+          "url": "http://localhost:9090",
+          "description": "Local development — not a public network."
+        }
+      ],
       "get": {
         "tags": [
           "Bridge"
@@ -4715,6 +4725,16 @@
       }
     },
     "/api/v1/bridge/deposit-addresses": {
+      "servers": [
+        {
+          "url": "https://exchange.nexus.xyz",
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
+        },
+        {
+          "url": "http://localhost:9090",
+          "description": "Local development — not a public network."
+        }
+      ],
       "post": {
         "tags": [
           "Bridge"
@@ -4798,6 +4818,16 @@
       }
     },
     "/api/v1/bridge/deposits": {
+      "servers": [
+        {
+          "url": "https://exchange.nexus.xyz",
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
+        },
+        {
+          "url": "http://localhost:9090",
+          "description": "Local development — not a public network."
+        }
+      ],
       "get": {
         "tags": [
           "Bridge"
@@ -4884,6 +4914,16 @@
       }
     },
     "/api/v1/bridge/deposits/{id}": {
+      "servers": [
+        {
+          "url": "https://exchange.nexus.xyz",
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
+        },
+        {
+          "url": "http://localhost:9090",
+          "description": "Local development — not a public network."
+        }
+      ],
       "get": {
         "tags": [
           "Bridge"
@@ -7111,7 +7151,7 @@
       },
       "NetworkTarget": {
         "type": "object",
-        "description": "Connection targets and funds semantics for one network. Mirrors an entry of the top-level `x-nexus-networks.networks` map, which is the static fallback; `/metadata` is authoritative at runtime.",
+        "description": "Connection targets and funds semantics for one network. Field-for-field the same shape as an entry of the top-level `x-nexus-networks.networks` map — same names, same meanings — so a client can deserialize either into one type: the map is the static fallback, `/metadata` is authoritative at runtime. Two differences, both deliberate. Identity: in the static map the network identifier is the map key, while here it is also carried explicitly in `network`, so a single target stays self-describing when passed around on its own. And the static map's per-network `description` is prose for people reading this document — it is not part of the runtime payload and no edge is expected to serve it.",
         "required": [
           "network",
           "rest_base"
@@ -7122,6 +7162,18 @@
             "maxLength": 64,
             "description": "Network identifier. Known values: `mainnet` (real funds), `testnet` (play funds), `local`. Deliberately an open string rather than an enum, so a network added later cannot break deserialization — but treat an identifier you do not recognize as **real funds**, and require explicit confirmation before anything that moves money.",
             "example": "testnet"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "Human-readable name for this network, for display in UIs and CLI output. Presentation only — never parse it or key logic off it; `network` is the identifier.",
+            "example": "Testnet"
+          },
+          "host": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Bare host (with port, if non-default) serving this network. Each network is its own origin, terminating its own TLS and WebSocket upgrades, so this is what belongs in CORS allowlists, certificate pinning, and egress rules. Do not assemble request URLs from it — use `rest_base`, which already carries the scheme and version segment — and never derive it by interpolating `network` into a template, because mainnet is deliberately off-pattern.",
+            "example": "api.testnet.nexus.xyz"
           },
           "rest_base": {
             "type": "string",
