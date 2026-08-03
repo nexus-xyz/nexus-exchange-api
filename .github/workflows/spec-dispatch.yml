@@ -109,10 +109,18 @@ jobs:
                  "the workflow cannot dispatch to ${TARGET} without it."
             exit 1
           fi
-          # The same shape every handler re-checks on receipt. Validating here
-          # too means a typo'd manual tag fails once, before it reaches a URL, a
-          # branch name, or a file in four repos.
-          if [[ ! "${TAG}" =~ ^v[0-9]+(\.[0-9]+){0,2}$ ]]; then
+          # Validating here means a typo'd manual tag fails once, before it
+          # reaches a URL, a branch name, or a file in four repos.
+          #
+          # Deliberately STRICTER than the handlers, which all accept
+          # `^v[0-9]+(\.[0-9]+){0,2}$` and so let `v1` and `v0.7` through. Every
+          # release this repo has ever cut is three-component (release-please
+          # emits nothing else), so a partial tag is always a typo — and one that
+          # the loose shape would wave through here AND at all four handlers,
+          # only to fail in each of them when the spec is fetched at a tag that
+          # does not exist. Rejecting it here is the difference between one red
+          # leg at the source and four red legs in four repos.
+          if [[ ! "${TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             # Strip control characters and bound the length before echoing the
             # rejected value: a `::error::` line built from an unvalidated tag
             # would otherwise let an embedded newline inject further workflow
