@@ -5045,7 +5045,7 @@
           "Bridge"
         ],
         "summary": "Register a withdrawal wallet",
-        "description": "Register an ownership-proven wallet as the account's withdrawal sink. Submit the `address`, the `message` returned by `POST /api/v1/bridge/wallets/challenge` echoed back verbatim, and the EIP-191 signature over it.\n\nThe address recovered from the signature must equal `address`, and the account named in the challenge must be the authenticated account. The first verified wallet becomes the default. Idempotent: re-registering an address already registered to the account returns the existing record.\n\nError codes: `invalid_challenge`, `challenge_expired`, `signature_mismatch`, `account_mismatch`.",
+        "description": "Register an ownership-proven wallet as the account's withdrawal sink. Submit the `address`, the `message` returned by `POST /api/v1/bridge/wallets/challenge` echoed back verbatim, and the EIP-191 signature over it.\n\nThe address recovered from the signature must equal `address`, and the account named in the challenge must be the authenticated account. The first verified wallet becomes the default. Idempotent: re-registering an address already registered to the account returns the existing record. Registering a *different* address while one is already registered is rejected with `wallet_already_registered`: an account holds one wallet in this cut and replacement is not supported, so the request is a rejection rather than an update.\n\nError codes: `invalid_challenge`, `challenge_expired`, `signature_mismatch`, `account_mismatch`, `wallet_already_registered`.",
         "operationId": "registerBridgeWallet",
         "security": [
           {
