@@ -5229,11 +5229,17 @@
         }
       },
       "BridgeUnavailable": {
-        "description": "The operation is not available on this deployment (e.g. wallet registration has no challenge key configured).",
+        "description": "The operation is not available on this deployment (e.g. wallet registration has no challenge key configured). Not transient: this reflects deployment configuration, so retrying will not succeed.",
         "content": {
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/BridgeError"
+            },
+            "example": {
+              "error": {
+                "code": "wallet_registration_unavailable",
+                "message": "wallet registration is not configured on this deployment"
+              }
             }
           }
         }
