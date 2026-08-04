@@ -136,7 +136,7 @@
     },
     {
       "name": "Bridge",
-      "description": "Cross-chain deposits: bridgeable assets, per-account deposit addresses, and deposit tracking (Phase A: USDC/USDX)."
+      "description": "Cross-chain deposits and withdrawal wallets: bridgeable assets, per-account deposit addresses, deposit tracking, and ownership-proven withdrawal wallets (Phase A: USDC/USDX)."
     }
   ],
   "paths": {
@@ -4969,6 +4969,160 @@
           }
         }
       }
+    },
+    "/api/v1/bridge/wallets/challenge": {
+      "servers": [
+        {
+          "url": "https://exchange.nexus.xyz",
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
+        },
+        {
+          "url": "http://localhost:9090",
+          "description": "Local development — not a public network."
+        }
+      ],
+      "post": {
+        "tags": [
+          "Bridge"
+        ],
+        "summary": "Create a wallet-registration challenge",
+        "description": "Start registration of a withdrawal wallet. Returns a message to sign with the wallet's key using EIP-191 `personal_sign`. Sign the `message` field verbatim, then submit the signature to `POST /api/v1/bridge/wallets`.\n\nThe message is bound to both the authenticated account and `address`, and expires at `expires_at`. It carries its own integrity tag, so no server-side state is held between this call and registration.",
+        "operationId": "createBridgeWalletChallenge",
+        "security": [
+          {
+            "hmacAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBridgeWalletChallengeRequest"
+              },
+              "example": {
+                "address": "0x3178f4bC9A2B1e0d2Cf5eA1B7C4D6E8F0a2B4C6D"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The challenge to sign.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BridgeWalletChallenge"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BridgeBadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/api/v1/bridge/wallets": {
+      "servers": [
+        {
+          "url": "https://exchange.nexus.xyz",
+          "description": "Testnet (play funds) — legacy direct-service host. Not a release channel: see `x-nexus-networks` for the network map."
+        },
+        {
+          "url": "http://localhost:9090",
+          "description": "Local development — not a public network."
+        }
+      ],
+      "post": {
+        "tags": [
+          "Bridge"
+        ],
+        "summary": "Register a withdrawal wallet",
+        "description": "Register an ownership-proven wallet as the account's withdrawal sink. Submit the `address`, the `message` returned by `POST /api/v1/bridge/wallets/challenge` echoed back verbatim, and the EIP-191 signature over it.\n\nThe address recovered from the signature must equal `address`, and the account named in the challenge must be the authenticated account. The first verified wallet becomes the default. Idempotent: re-registering an address already registered to the account returns the existing record. Registering a *different* address while one is already registered is rejected with `409` / `wallet_already_registered`: an account holds one wallet in this cut and replacement is not supported, so the request is a rejection rather than an update.\n\nError codes: `invalid_challenge`, `challenge_expired`, `signature_mismatch` and `account_mismatch` on `400`; `wallet_already_registered` on `409`.",
+        "operationId": "registerBridgeWallet",
+        "security": [
+          {
+            "hmacAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterBridgeWalletRequest"
+              },
+              "example": {
+                "address": "0x3178f4bC9A2B1e0d2Cf5eA1B7C4D6E8F0a2B4C6D",
+                "message": "Nexus Exchange: register 0x3178f4bC9A2B1e0d2Cf5eA1B7C4D6E8F0a2B4C6D as the withdrawal wallet for account 0x7a1Fb3C5D7E9A1B3C5D7E9A1B3C5D7E9A1B3C5D7\nnonce: 9f2c1d84a6b03e57\nexpires: 1785772800000\ntag: 0x4d3c1a9f",
+                "signature": "0xababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The registered wallet (existing or newly verified).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BridgeWallet"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BridgeBadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "409": {
+            "$ref": "#/components/responses/BridgeConflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Bridge"
+        ],
+        "summary": "List registered wallets",
+        "description": "List the authenticated account's registered withdrawal wallets. Wallets are not chain-scoped: one EVM address is valid on every supported EVM chain, and the chain is chosen per withdrawal.",
+        "operationId": "listBridgeWallets",
+        "security": [
+          {
+            "hmacAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The account's registered wallets.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BridgeWalletsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -5050,6 +5204,16 @@
       },
       "BridgeNotFound": {
         "description": "The resource does not exist, or is not owned by the authenticated account.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/BridgeError"
+            }
+          }
+        }
+      },
+      "BridgeConflict": {
+        "description": "The request conflicts with existing state (e.g. the account already registered a different withdrawal wallet).",
         "content": {
           "application/json": {
             "schema": {
@@ -7120,6 +7284,104 @@
               }
             ],
             "description": "Unix ms when the deposit was credited; null until `status` is `credited`."
+          }
+        }
+      },
+      "CreateBridgeWalletChallengeRequest": {
+        "type": "object",
+        "required": [
+          "address"
+        ],
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "0x-prefixed EVM address to register as a withdrawal wallet."
+          }
+        }
+      },
+      "BridgeWalletChallenge": {
+        "type": "object",
+        "description": "A message proving control of a wallet, valid until `expires_at`. Not single-use: until it expires the same signature can be replayed, which is a no-op because it only re-registers the same address for the same account.",
+        "required": [
+          "address",
+          "nonce",
+          "message",
+          "expires_at"
+        ],
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "The address the challenge was issued for."
+          },
+          "nonce": {
+            "type": "string",
+            "description": "Random value carried inside `message`, distinct per challenge. Informational only: sign `message`, not this. It does not make the challenge single-use."
+          },
+          "message": {
+            "type": "string",
+            "description": "Exact string to sign with EIP-191 `personal_sign`. Its format is server-defined, so treat it as opaque: do not reformat, re-encode or trim it. Echo it back verbatim to `POST /api/v1/bridge/wallets`."
+          },
+          "expires_at": {
+            "$ref": "#/components/schemas/TimestampMs"
+          }
+        }
+      },
+      "RegisterBridgeWalletRequest": {
+        "type": "object",
+        "required": [
+          "address",
+          "message",
+          "signature"
+        ],
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "0x-prefixed EVM address being registered. Must match the address recovered from `signature`."
+          },
+          "message": {
+            "type": "string",
+            "description": "The exact `message` returned by `POST /api/v1/bridge/wallets/challenge`, echoed back verbatim. The server holds no state between the two calls, so it re-derives the signed bytes from this field and re-checks the integrity tag, the account binding, and `expires_at` against it."
+          },
+          "signature": {
+            "type": "string",
+            "description": "0x-prefixed 65-byte EIP-191 signature over `message`."
+          }
+        }
+      },
+      "BridgeWallet": {
+        "type": "object",
+        "description": "An ownership-proven wallet that withdrawals can be paid to.",
+        "required": [
+          "address",
+          "verified",
+          "is_default"
+        ],
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "0x-prefixed EVM address."
+          },
+          "verified": {
+            "type": "boolean",
+            "description": "Whether ownership was proven by signature. Only verified wallets can receive a withdrawal. Always `true` in this cut: a failed check returns 400 rather than storing an unproven record, so do not branch on it. The field is here because the wallet-lifecycle follow-up adds records that are not yet proven, and introducing it later would churn every generated SDK."
+          },
+          "is_default": {
+            "type": "boolean",
+            "description": "Whether this is the account's default withdrawal sink, used when a withdrawal names no destination. Always `true` in this cut: an account holds at most one registered wallet, so do not branch on it. It starts varying with the wallet-lifecycle follow-up, which allows several wallets and moving the default between them."
+          }
+        }
+      },
+      "BridgeWalletsResponse": {
+        "type": "object",
+        "required": [
+          "wallets"
+        ],
+        "properties": {
+          "wallets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BridgeWallet"
+            }
           }
         }
       },
