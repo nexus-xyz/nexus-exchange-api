@@ -5995,7 +5995,7 @@
               "null"
             ],
             "minimum": 0,
-            "description": "Server-enforced slippage cap in basis points (1 bp = 0.01%). Omit the field for no cap. When set, the engine captures the book mid-price `(best_bid + best_ask) / 2` once at submission and requires the order's running fill VWAP to stay inside `mid ± mid × bps / 10000` as it walks the book. Fills made before the cap binds stand; the fill that would push the VWAP outside the band is not made and the unfilled remainder is cancelled — the order comes back on the normal `201` with `status` `Cancelled` and a `SlippageCap` cancellation reason, not as an error. Because the reference is the mid captured server-side at submission and the bound is on the running VWAP rather than on the worst individual fill, this is a stricter guarantee than a marketable limit price derived client-side from a previously sampled reference price.\n\nApplies to the market family: `Market`, plus `StopMarket`, `TakeProfitMarket`, and `TrailingStop`, which carry the field through their conversion and have the cap applied when they fire as market orders. Accepted but ignored on `Limit`, `StopLimit`, `TakeProfitLimit`, and `TrailingLimit` — a limit order already fills at its limit price or better.\n\nTwo edges worth knowing. A mid-price requires **both** sides of the book to be non-empty, so a capped order submitted while either side is empty is rejected with `InsufficientLiquidity` (a `400` on `POST /orders`, an `err` item on `POST /orders/batch`) — including when the empty side is the order's own and the order could otherwise have filled. And `0` does not mean \"no cap\": it collapses the band onto the mid exactly, so against any book with a non-zero spread the order cancels with zero fills. `POST /orders/preview` accepts the field but does not apply it — `expected_fill_vwap` always walks the full book."
+            "description": "Server-enforced slippage cap in basis points (1 bp = 0.01%). Omit the field for no cap. When set, the engine captures the book mid-price `(best_bid + best_ask) / 2` once at submission and requires the order's running fill VWAP to stay inside `mid ± mid × bps / 10000` as it walks the book. Fills made before the cap binds stand; the fill that would push the VWAP outside the band is not made and the unfilled remainder is cancelled — the order comes back on the normal `201` with `status` `Cancelled` and `cancellation_reason` `SlippageCap`, not as an error. Because the reference is the mid captured server-side at submission and the bound is on the running VWAP rather than on the worst individual fill, this is a stricter guarantee than a marketable limit price derived client-side from a previously sampled reference price.\n\nApplies to the market family: `Market`, plus `StopMarket`, `TakeProfitMarket`, and `TrailingStop`, which carry the field through their conversion and have the cap applied when they fire as market orders. Accepted but ignored on `Limit`, `StopLimit`, `TakeProfitLimit`, and `TrailingLimit` — a limit order already fills at its limit price or better.\n\nTwo edges worth knowing. A mid-price requires **both** sides of the book to be non-empty, so a capped order submitted while either side is empty is rejected with `InsufficientLiquidity` (a `400` on `POST /orders`, an `err` item on `POST /orders/batch`) — including when the empty side is the order's own and the order could otherwise have filled. And `0` does not mean \"no cap\": it collapses the band onto the mid exactly, so against any book with a non-zero spread the order cancels with zero fills. `POST /orders/preview` accepts the field but does not apply it — `expected_fill_vwap` always walks the full book."
           }
         }
       },
@@ -6151,6 +6151,31 @@
               "Expired",
               "Rejected"
             ]
+          },
+          "cancellation_reason": {
+            "oneOf": [
+              {
+                "type": "null",
+                "description": "The order has not reached a terminal status, or no cause was recorded."
+              },
+              {
+                "type": "string",
+                "description": "Any cause other than self-trade prevention, as a bare string."
+              },
+              {
+                "type": "object",
+                "description": "A cause that carries a payload. Exactly one key, naming the cause. `additionalProperties` is deliberately not closed, so a cause added later does not invalidate this schema.",
+                "minProperties": 1,
+                "maxProperties": 1,
+                "properties": {
+                  "Stp": {
+                    "type": "string",
+                    "description": "Self-trade prevention cancelled the order; the value is the STP mode that fired (`CancelNewest`, `CancelOldest` or `DecrementAndCancel`)."
+                  }
+                }
+              }
+            ],
+            "description": "Why the order reached a terminal `Cancelled` or `Rejected` status. `null` for every other status, and for a terminal order the engine recorded no cause for. The key is always present.\n\n**Two wire shapes.** The engine's reason type is an externally tagged enum, so every cause except self-trade prevention is a bare string, while self-trade prevention is a single-key object naming the mode that fired: `{\"Stp\": \"CancelNewest\"}`. Branch on the JSON type before reading the value.\n\nThe string form is one of `User` (an explicit cancel or cancel-all), `SlippageCap` (a market order's running fill VWAP left the `max_slippage_bps` band — see that field), `Liquidation` (cancelled ahead of a liquidation, or the unfilled remainder of one), `Expired` (an IOC, FOK or market remainder that cannot rest on the book), `MarketHalt`, `AmendReplace` (carried on the *original* order of an atomic cancel-replace via `PATCH /orders/{order_id}`), `InsufficientLiquidity` (a stop, stop-limit or trailing stop fired into an empty opposite side), `BracketClosed` or `BracketFlipped` (a bracket child whose parent position closed to zero or flipped sign), or `PriceBandExceeded` (the order-vs-mark price-band collar rejected it). The object form's only key today is `Stp`, whose value is `CancelNewest`, `CancelOldest` or `DecrementAndCancel`.\n\n**Treat the value as open.** Causes are added as the engine gains them, and this is not a closed enum: match the ones you handle and surface anything else verbatim rather than failing to parse. A client pinned to an older spec tag will meet causes it does not know.\n\n`GET /orders/history` reports the same causes in a **different encoding** — `OrderHistoryEntry.cancellation_reason` is always a string and renders the self-trade case as `Stp(CancelNewest)`, not as an object. Do not compare values across the two surfaces."
           },
           "time_in_force": {
             "type": "string"
@@ -6857,7 +6882,8 @@
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "Why the order was cancelled or rejected; `null` for any other status. Always a **string** on this route, including for self-trade prevention, which renders as `Stp(CancelNewest)` — this surface stringifies the engine's reason type, so the encoding differs from `Order.cancellation_reason`, where that same cause is the object `{\"Stp\": \"CancelNewest\"}`. The cause set is otherwise identical, and equally open — see `Order.cancellation_reason` for the full list."
           },
           "created_at_ms": {
             "$ref": "#/components/schemas/TimestampMs"
