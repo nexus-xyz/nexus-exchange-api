@@ -5713,6 +5713,7 @@
               "integer",
               "null"
             ],
+            "minimum": 0,
             "description": "Slippage cap in basis points, echoed for orders placed with one (see the `OrderRequest.max_slippage_bps` placement field); null for orders placed without a cap."
           },
           "price": {
