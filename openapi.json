@@ -5989,6 +5989,19 @@
             "maximum": 9999,
             "description": "Offset in basis points for the fired limit price (`TrailingLimit` only; required together with `trailing_offset_bps`). When the trailing trigger fires at `fire_price`, the injected limit order rests at `fire_price` * (1 + offset) for buys / * (1 - offset) for sells, tick-rounded toward the tighter bound. A value of 0 rests the limit exactly at `fire_price`. Ignored for other order types."
           },
+          "stp": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "CancelNewest",
+              "CancelOldest",
+              "DecrementAndCancel",
+              null
+            ],
+            "description": "Opt-in self-trade prevention. Omit the field, or send `null`, to allow self-matching — that is the default and the industry-standard behaviour, and the engine will fill your order against your own resting order. Set a mode to have the engine intervene when a taker meets a maker on the same account instead.\n\n`CancelNewest` cancels the incoming taker and leaves the maker resting; the taker stops walking the book entirely, so remaining taker size beyond that maker is cancelled too. `CancelOldest` cancels the resting maker and lets the taker carry on against other accounts' makers. `DecrementAndCancel` reduces both sides by `min(taker_remaining, maker_size)` and cancels the smaller side, leaving the larger to continue at the reduced quantity.\n\nThe check is applied **per encountered same-account maker**, not once at order entry, so a taker crossing several of your own makers is evaluated at each one. It sits in the shared matching path, so it applies to every order type rather than a subset. When a mode cancels an order, that order comes back with `cancellation_reason` set to the object `{\"Stp\": \"<mode>\"}` — see `Order.cancellation_reason`."
+          },
           "max_slippage_bps": {
             "type": [
               "integer",
@@ -6123,6 +6136,13 @@
               "null"
             ],
             "description": "Fire-time limit offset in basis points, echoed for `TrailingLimit` orders (see the `OrderRequest.limit_offset_bps` placement field); null for other order types."
+          },
+          "stp": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The self-trade prevention mode the order was placed with, echoed back (see the `OrderRequest.stp` placement field for what each mode does). `null` for an order placed without one, which is the default and means self-matching was allowed. One of `CancelNewest`, `CancelOldest` or `DecrementAndCancel`.\n\nDeliberately not a closed enum here, for the same reason as `cancellation_reason`: the mode set has changed before (D-026 supersedes D-014) and a mode added later must not break a client pinned to an older spec tag. `OrderRequest.stp` does enumerate the modes, because there the value is one you supply and the server validates it."
           },
           "max_slippage_bps": {
             "type": [
