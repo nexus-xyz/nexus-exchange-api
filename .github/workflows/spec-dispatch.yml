@@ -11,23 +11,62 @@ name: Notify SDKs of spec release
 # a daily scheduled poll as a fallback, so a dropped dispatch self-heals within
 # a day — this dispatch is the fast path, not the only path.
 #
+# Note what a 204 from a target does NOT prove: `POST /dispatches` returns 204
+# whether or not any workflow listens for the event type. A target with no
+# handler on its default branch therefore produces a GREEN leg that did nothing.
+# So the matrix below lists only repos whose `spec-autobump.yml` is confirmed on
+# `main` — adding an unwired repo would make this workflow report success while
+# that repo is still only reachable by its daily poll.
+#
 # Auth: `secrets.SDK_DISPATCH_TOKEN` is a scoped token with `contents: write`
 # (or the dispatch permission) on the target repos, provisioned by ENG-4149.
-# The default GITHUB_TOKEN cannot dispatch to other repositories.
+# The default GITHUB_TOKEN cannot dispatch to other repositories. Token scope is
+# the one thing that genuinely fails a leg (403/404), so it fails loudly below.
+#
+# ⚠️ TWO PREREQUISITES ARE NOT MET YET (both ENG-4149, both verified 2026-07-31):
+#
+#   1. `SDK_DISPATCH_TOKEN` is not set on this repo — no repo secret, and no org
+#      secret visible to it. Every leg fails fast with the explicit error below
+#      until it is provisioned.
+#   2. The `release: published` trigger does not fire at all. release-please cuts
+#      the release with the default GITHUB_TOKEN, and GitHub does not start
+#      workflow runs from events created by that token. Evidence: this file has
+#      been on `main` since 2026-06-26, v0.7.2 was released 2026-07-27, and this
+#      workflow has zero runs. Fixing it is infra work in release-please.yml
+#      (hand the action the ENG-4149 app token) — not a change to this file.
+#
+# Until both land, `workflow_dispatch` is the working path: run this workflow
+# manually with the release tag after a release.
 
 on:
   release:
     types: [published]
+  # Manual path. Two uses: it is the only working trigger until prerequisite 2
+  # above is fixed, and it re-runs the fan-out for a tag whose legs failed (e.g.
+  # the token was not yet scoped to one target).
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Spec release tag to fan out (e.g. v0.7.2)."
+        required: true
 
 permissions:
   contents: read
 
 concurrency:
-  group: spec-dispatch-${{ github.event.release.tag_name }}
+  # Keyed on the resolved tag so a manual re-run queues behind the release-driven
+  # run for that same tag instead of racing it. Distinct tags still fan out
+  # concurrently, and nothing is cancelled — a half-delivered fan-out is worse
+  # than a slow one, since the undelivered targets fall back to the daily poll.
+  group: spec-dispatch-${{ github.event.release.tag_name || github.event.inputs.tag }}
   cancel-in-progress: false
 
 jobs:
   dispatch:
+    # A prerelease must never advance an SDK's pin — the SDKs pin stable spec
+    # releases. `release: published` fires for prereleases too, so exclude them
+    # here rather than relying on every handler to notice.
+    if: ${{ github.event_name != 'release' || !github.event.release.prerelease }}
     runs-on: ubuntu-latest
     strategy:
       # One target failing (e.g. token not yet scoped to it) must not block the
@@ -36,14 +75,22 @@ jobs:
       matrix:
         target:
           - nexus-xyz/nexus-exchange-rs
-          # TODO(ENG-3563): enable once each repo has landed `spec-autobump.yml`
-          # (replicate the reference from nexus-exchange-rs first — see that
-          # repo's docs/spec-autobump-replication.md):
-          #   - nexus-xyz/nexus-exchange-py
-          #   - nexus-xyz/nexus-exchange-cli
-          #   - nexus-xyz/nexus-exchange-mcp
-          # And the monorepo re-vendor leg (different handler — runs
-          # eng/apps/exchange/scripts/bump-api-spec.sh <tag>):
+          - nexus-xyz/nexus-exchange-py
+          - nexus-xyz/nexus-exchange-mcp
+          - nexus-xyz/nexus-exchange-ts
+          # NOT nexus-exchange-cli, deliberately: it wraps nexus_exchange rather
+          # than implementing the spec, so a spec release gives it nothing to act
+          # on. Its chain is api -> rs -> cli, and it follows crates.io for
+          # `nexus-exchange` releases instead (sdk-autobump.yml, ENG-7962). Its
+          # CI now fails if `.api-version` disagrees with the crate's own pin, so
+          # a spec-driven bump there would be rejected rather than merged. Please
+          # do not re-add it.
+          #
+          # And the monorepo re-vendor leg: it vendors the spec instead of
+          # pinning a tag, so it needs a different handler (runs
+          # eng/apps/exchange/scripts/bump-api-spec.sh <tag>) rather than a
+          # matrix row. Filed separately — see rs's
+          # docs/spec-autobump-replication.md:
           #   - nexus-xyz/nexus
     steps:
       - name: Dispatch spec-released to ${{ matrix.target }}
@@ -51,14 +98,35 @@ jobs:
           GH_TOKEN: ${{ secrets.SDK_DISPATCH_TOKEN }}
           TARGET: ${{ matrix.target }}
           # Passed via env (not interpolated into the script body) so the tag is
-          # data, not code. release tag_name is repo-controlled, but keep the
-          # habit consistent with the rest of the pipeline.
-          TAG: ${{ github.event.release.tag_name }}
+          # data, not code. The release tag_name is repo-controlled, but the
+          # workflow_dispatch input is whatever a human typed — hence the
+          # validation below.
+          TAG: ${{ github.event.release.tag_name || github.event.inputs.tag }}
         run: |
           set -euo pipefail
           if [ -z "${GH_TOKEN:-}" ]; then
             echo "::error::SDK_DISPATCH_TOKEN is not set. It is provisioned by ENG-4149;" \
                  "the workflow cannot dispatch to ${TARGET} without it."
+            exit 1
+          fi
+          # Validating here means a typo'd manual tag fails once, before it
+          # reaches a URL, a branch name, or a file in four repos.
+          #
+          # Deliberately STRICTER than the handlers, which all accept
+          # `^v[0-9]+(\.[0-9]+){0,2}$` and so let `v1` and `v0.7` through. Every
+          # release this repo has ever cut is three-component (release-please
+          # emits nothing else), so a partial tag is always a typo — and one that
+          # the loose shape would wave through here AND at all four handlers,
+          # only to fail in each of them when the spec is fetched at a tag that
+          # does not exist. Rejecting it here is the difference between one red
+          # leg at the source and four red legs in four repos.
+          if [[ ! "${TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            # Strip control characters and bound the length before echoing the
+            # rejected value: a `::error::` line built from an unvalidated tag
+            # would otherwise let an embedded newline inject further workflow
+            # commands into the log.
+            safe_tag=$(printf '%s' "${TAG}" | tr -d '\000-\037' | cut -c1-64)
+            echo "::error::refusing to dispatch a tag that is not vX.Y.Z: '${safe_tag}'"
             exit 1
           fi
           echo "Dispatching spec-released (tag=${TAG}) to ${TARGET}"
