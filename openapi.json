@@ -445,7 +445,7 @@
           "WebSocket"
         ],
         "summary": "Mint a WebSocket token",
-        "description": "Returns a short-lived (60s), single-use token bound to the authenticated account. Pass it as `?token=TOKEN` when upgrading to `GET /ws`. Supports HMAC keys, registered agent keys, and session tokens (Bearer). The token encodes the account identity so per-account channels (orders, fills, positions, balances) are automatically scoped to the connected wallet.",
+        "description": "Returns a short-lived (60s), single-use token bound to the authenticated account. Pass it as `?token=TOKEN` when upgrading to `GET /ws`. Supports HMAC keys, registered agent keys, and session tokens (Bearer). The token encodes the account identity so per-account channels (orders, fills, positions, balances, liquidations) are automatically scoped to the connected wallet.",
         "security": [
           {
             "hmacAuth": []
@@ -2022,7 +2022,7 @@
           "WebSocket"
         ],
         "summary": "Per-account WebSocket stream",
-        "description": "WebSocket endpoint for both public market data and per-account private channels. Requires a token from POST /ws/token:\n```\nwss://host/ws?token=YOUR_TOKEN\n```\nTokens are single-use and expire after 60 seconds, and they are scoped to the network that minted them — mint the token on the same host you connect to.\n\nEvery client→server and server→client message is a JSON envelope tagged with an `op` field. Subscribe to one channel per message:\n```json\n{\"op\": \"subscribe\", \"channel\": \"trades\", \"market\": \"BTC-USDX-PERP\"}\n{\"op\": \"subscribe\", \"channel\": \"fills\"}\n```\nUnsubscribe with `{\"op\": \"unsubscribe\", \"channel\": \"...\", \"market\": \"...\"}`.\n\n**Public channels** (the token is always required to upgrade): `trades`, `book`, `candles` — each requires a `market` field.\n\n**Per-account channels** (scoped to the wallet that minted the token): `orders`, `fills`, `positions`, `balances`.\n\n**Server messages:**\n- `{\"op\": \"subscribed\", \"channel\": \"fills\", \"market\": null, \"seq_at_join\": 42}` — subscribe ack; `seq_at_join` is the channel's current sequence at attach time, used as the reconnect cursor.\n- `{\"op\": \"unsubscribed\", \"channel\": \"fills\", \"market\": null}` — unsubscribe ack.\n- `{\"op\": \"event\", \"channel\": \"fills\", \"market\": null, \"seq\": 43, \"payload\": {...}}` — a delivered event; `seq` is monotonic per channel.\n- `{\"op\": \"out_of_sync\", \"channel\": \"fills\", \"market\": null, \"oldest_seq\": 100}` — the requested `since` cursor fell behind the replay buffer; refetch state over REST and resubscribe with a fresh cursor.\n- `{\"op\": \"error\", \"message\": \"...\"}` — invalid op, unknown channel, or bad message format.\n\n**Reconnection:** tokens are single-use — mint a new one via POST /ws/token before reconnecting. To resume a channel without gaps, pass the last `seq` you received:\n```json\n{\"op\": \"subscribe\", \"channel\": \"fills\", \"since\": 42}\n```",
+        "description": "WebSocket endpoint for both public market data and per-account private channels. Requires a token from POST /ws/token:\n```\nwss://host/ws?token=YOUR_TOKEN\n```\nTokens are single-use and expire after 60 seconds, and they are scoped to the network that minted them — mint the token on the same host you connect to.\n\nEvery client→server and server→client message is a JSON envelope tagged with an `op` field. Subscribe to one channel per message:\n```json\n{\"op\": \"subscribe\", \"channel\": \"trades\", \"market\": \"BTC-USDX-PERP\"}\n{\"op\": \"subscribe\", \"channel\": \"fills\"}\n```\nUnsubscribe with `{\"op\": \"unsubscribe\", \"channel\": \"...\", \"market\": \"...\"}`.\n\n**Public channels** (the token is always required to upgrade): `trades`, `book`, `candles` — each requires a `market` field. `engine` is public and venue-wide, so it takes no `market` field: subscribe and unsubscribe are accepted and acked, but no frames are published on it yet. Treat it as reserved — do not build against a payload shape.\n\n**Per-account channels** (scoped to the wallet that minted the token): `orders`, `fills`, `positions`, `balances`, `liquidations`.\n\n**Server messages:**\n- `{\"op\": \"subscribed\", \"channel\": \"fills\", \"market\": null, \"seq_at_join\": 42}` — subscribe ack; `seq_at_join` is the channel's current sequence at attach time, used as the reconnect cursor.\n- `{\"op\": \"unsubscribed\", \"channel\": \"fills\", \"market\": null}` — unsubscribe ack.\n- `{\"op\": \"event\", \"channel\": \"fills\", \"market\": null, \"seq\": 43, \"payload\": {...}}` — a delivered event; `seq` is monotonic per channel.\n- `{\"op\": \"out_of_sync\", \"channel\": \"fills\", \"market\": null, \"oldest_seq\": 100}` — the requested `since` cursor fell behind the replay buffer; refetch state over REST and resubscribe with a fresh cursor.\n- `{\"op\": \"error\", \"message\": \"...\"}` — invalid op, unknown channel, or bad message format.\n\n**`liquidations` payloads:** the `payload` of an `event` on this channel is externally tagged — exactly one key, naming the engine event variant. See the `LiquidationEvent` schema for the full shape. Monetary fields are lossless decimal strings, never JSON numbers.\n- `LiquidationAlert` — a pre-liquidation risk warning for the account. `severity` is `Warning`, `Critical` or `Imminent`, classified from `equity / maintenance_margin`: `Warning` in (1.2, 1.5], `Critical` in (1.05, 1.2], `Imminent` in (1.0, 1.05]. Nothing is emitted above 1.5 (safe) or at/below 1.0 (already liquidating). `market_id` is `null` for a portfolio-level alert over the whole cross-margin account — the only form the engine emits today — and names a market when the alert is scoped to one market.\n- `PortfolioLiquidation` — terminal: the account's cross-margin positions have already been closed out. `closures` carries the per-market closes.\n\nAlerts are **edge-triggered**: one frame per worsening severity transition, nothing while a severity holds, and nothing when the account recovers. Subscribing does not replay the current alert state — unlike `balances` and `positions`, this channel is not seeded with a snapshot on subscribe — and there is no REST read of it, so a reconnecting client sees nothing until the next worsening transition.\n```json\n{\"op\": \"event\", \"channel\": \"liquidations\", \"market\": null, \"seq\": 7, \"payload\": {\"LiquidationAlert\": {\"account_id\": \"0x1111111111111111111111111111111111111111\", \"market_id\": null, \"severity\": \"Critical\", \"equity\": \"1150.00\", \"maintenance_margin\": \"1000.00\", \"sequence\": 9412, \"epoch\": 3, \"emitted_at\": 1750000000000}}}\n```\n\n**Reconnection:** tokens are single-use — mint a new one via POST /ws/token before reconnecting. To resume a channel without gaps, pass the last `seq` you received:\n```json\n{\"op\": \"subscribe\", \"channel\": \"fills\", \"since\": 42}\n```",
         "parameters": [
           {
             "name": "token",
@@ -7551,6 +7551,154 @@
             "additionalProperties": {
               "$ref": "#/components/schemas/NetworkTarget"
             }
+          }
+        }
+      },
+      "LiquidationEvent": {
+        "type": "object",
+        "description": "One `payload` delivered on the per-account `liquidations` WebSocket channel. Externally tagged: exactly one property is present and its key names the engine event variant. Ignore unrecognized keys — further variants may be added.",
+        "minProperties": 1,
+        "maxProperties": 1,
+        "properties": {
+          "LiquidationAlert": {
+            "$ref": "#/components/schemas/LiquidationAlert"
+          },
+          "PortfolioLiquidation": {
+            "$ref": "#/components/schemas/PortfolioLiquidation"
+          }
+        }
+      },
+      "LiquidationAlert": {
+        "type": "object",
+        "description": "Pre-liquidation risk warning for one account, delivered on the `liquidations` channel. Edge-triggered: emitted once per worsening severity transition, never on recovery, and never repeated while a severity holds.",
+        "required": [
+          "account_id",
+          "market_id",
+          "severity",
+          "equity",
+          "maintenance_margin",
+          "sequence",
+          "epoch",
+          "emitted_at"
+        ],
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "description": "0x-prefixed address the alert is about. Always the wallet that minted the token — the channel is filtered server-side."
+          },
+          "market_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Market the alert is scoped to, or `null` for a portfolio-level alert computed over the whole cross-margin account. Portfolio-level (`null`) is what the engine emits today, so clients must handle `null`; a non-null value scopes the alert to a single market."
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "Warning",
+              "Critical",
+              "Imminent",
+              "Unknown"
+            ],
+            "description": "Severity tier, classified from `equity / maintenance_margin`: `Warning` in (1.2, 1.5], `Critical` in (1.05, 1.2], `Imminent` in (1.0, 1.05]. Ordering is Warning < Critical < Imminent. `Unknown` is the forward-compatibility value for a tier this spec version does not name; treat it defensively rather than as a severity claim."
+          },
+          "equity": {
+            "$ref": "#/components/schemas/Decimal",
+            "description": "Account equity at the moment of classification, as a decimal string."
+          },
+          "maintenance_margin": {
+            "$ref": "#/components/schemas/Decimal",
+            "description": "Maintenance-margin requirement the equity was compared against, as a decimal string."
+          },
+          "sequence": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Engine event sequence number, monotonic within `epoch`."
+          },
+          "epoch": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Engine epoch. Increments when the engine restarts, so `sequence` is only comparable within one epoch."
+          },
+          "emitted_at": {
+            "$ref": "#/components/schemas/TimestampMs",
+            "description": "When the engine emitted the event. `0` when the upstream frame carried no emit timestamp."
+          }
+        }
+      },
+      "PortfolioLiquidation": {
+        "type": "object",
+        "description": "Terminal notification on the `liquidations` channel: the account's cross-margin positions have already been closed out. Not a warning — no action is available to the holder.",
+        "required": [
+          "account_id",
+          "closures",
+          "equity_before",
+          "equity_after",
+          "sequence",
+          "epoch",
+          "emitted_at"
+        ],
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "description": "0x-prefixed address that was liquidated."
+          },
+          "closures": {
+            "type": "array",
+            "description": "Per-market closes that made up the liquidation. Empty only if the account held no positions.",
+            "items": {
+              "$ref": "#/components/schemas/PortfolioLiquidationClosure"
+            }
+          },
+          "equity_before": {
+            "$ref": "#/components/schemas/Decimal",
+            "description": "Account equity before the closes, as a decimal string."
+          },
+          "equity_after": {
+            "$ref": "#/components/schemas/Decimal",
+            "description": "Account equity after the closes, as a decimal string."
+          },
+          "sequence": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Engine event sequence number, monotonic within `epoch`."
+          },
+          "epoch": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Engine epoch. Increments when the engine restarts, so `sequence` is only comparable within one epoch."
+          },
+          "emitted_at": {
+            "$ref": "#/components/schemas/TimestampMs",
+            "description": "When the engine emitted the event. `0` when the upstream frame carried no emit timestamp."
+          }
+        }
+      },
+      "PortfolioLiquidationClosure": {
+        "type": "object",
+        "description": "One market's forced close within a portfolio liquidation.",
+        "required": [
+          "market_id",
+          "position_size_closed",
+          "settlement_price",
+          "settlement_amount"
+        ],
+        "properties": {
+          "market_id": {
+            "type": "string"
+          },
+          "position_size_closed": {
+            "$ref": "#/components/schemas/Decimal",
+            "description": "Absolute position size closed, as a decimal string."
+          },
+          "settlement_price": {
+            "$ref": "#/components/schemas/Decimal",
+            "description": "Price the close settled at (the mark price used for the closure), as a decimal string."
+          },
+          "settlement_amount": {
+            "$ref": "#/components/schemas/Decimal",
+            "description": "Signed collateral delta from this close after fees, as a decimal string."
           }
         }
       }
