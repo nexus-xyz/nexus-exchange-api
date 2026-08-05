@@ -8,6 +8,18 @@ Pre-1.0 versioning convention:
 
 ---
 
+## [0.7.3](https://github.com/nexus-xyz/nexus-exchange-api/compare/v0.7.2...v0.7.3) (2026-08-05)
+
+
+### Features
+
+* declare invalid_address and the unconfigured 503 on wallet registration (ENG-9085) ([#74](https://github.com/nexus-xyz/nexus-exchange-api/issues/74)) ([0ff5fc9](https://github.com/nexus-xyz/nexus-exchange-api/commit/0ff5fc9ad92f4ef3e5583ac9cf9cc69fe9609deb))
+* define the restricted-jurisdiction 403 on state-changing operations (ENG-7463) ([#67](https://github.com/nexus-xyz/nexus-exchange-api/issues/67)) ([a7280c5](https://github.com/nexus-xyz/nexus-exchange-api/commit/a7280c5d5ed8303bcccf75b90ff782c068d40151))
+* document max_slippage_bps on OrderRequest / Order (ENG-7550) ([#66](https://github.com/nexus-xyz/nexus-exchange-api/issues/66)) ([fc9fd1c](https://github.com/nexus-xyz/nexus-exchange-api/commit/fc9fd1cd16b6ab07290b89f89b38b93ffe0c2b31))
+* document the liquidations and engine WS channels (ENG-7341) ([#65](https://github.com/nexus-xyz/nexus-exchange-api/issues/65)) ([f97aaee](https://github.com/nexus-xyz/nexus-exchange-api/commit/f97aaee8d3c16a4bbc1ae3472f8acff0e52c8b13))
+* formalize the network/environment axis (testnet/mainnet) in the spec (ENG-6442) ([7a1b441](https://github.com/nexus-xyz/nexus-exchange-api/commit/7a1b44167816d415c58843fdb40f3f0ebc3f6e35))
+* registered withdrawal wallets on /v1/bridge (ENG-8902) ([#73](https://github.com/nexus-xyz/nexus-exchange-api/issues/73)) ([fa2cd7f](https://github.com/nexus-xyz/nexus-exchange-api/commit/fa2cd7f06262a9c5253adcae7da7c8e0be7cd938))
+
 ## [0.7.2](https://github.com/nexus-xyz/nexus-exchange-api/compare/v0.7.1...v0.7.2) (2026-07-27)
 
 
