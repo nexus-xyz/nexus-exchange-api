@@ -5112,6 +5112,9 @@
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
+          "403": {
+            "$ref": "#/components/responses/RestrictedJurisdiction"
+          },
           "429": {
             "$ref": "#/components/responses/RateLimited"
           },
@@ -5175,6 +5178,9 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/RestrictedJurisdiction"
           },
           "409": {
             "$ref": "#/components/responses/BridgeConflict"
