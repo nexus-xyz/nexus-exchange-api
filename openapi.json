@@ -5075,7 +5075,7 @@
           "Bridge"
         ],
         "summary": "Create a wallet-registration challenge",
-        "description": "Start registration of a withdrawal wallet. Returns a message to sign with the wallet's key using EIP-191 `personal_sign`. Sign the `message` field verbatim, then submit the signature to `POST /api/v1/bridge/wallets`.\n\nThe message is bound to both the authenticated account and `address`, and expires at `expires_at`. It carries its own integrity tag, so no server-side state is held between this call and registration.",
+        "description": "Start registration of a withdrawal wallet. Returns a message to sign with the wallet's key using EIP-191 `personal_sign`. Sign the `message` field verbatim, then submit the signature to `POST /api/v1/bridge/wallets`.\n\nThe message is bound to both the authenticated account and `address`, and expires at `expires_at`. It carries its own integrity tag, so no server-side state is held between this call and registration.\n\nError codes: `invalid_address` on `400` when `address` is not a 0x-prefixed 20-byte hex string; `wallet_registration_unavailable` on `503` when the deployment has no challenge key configured, in which case registration is off rather than issuing challenges that cannot be trusted.",
         "operationId": "createBridgeWalletChallenge",
         "security": [
           {
@@ -5114,6 +5114,9 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/BridgeUnavailable"
           }
         }
       }
@@ -5134,7 +5137,7 @@
           "Bridge"
         ],
         "summary": "Register a withdrawal wallet",
-        "description": "Register an ownership-proven wallet as the account's withdrawal sink. Submit the `address`, the `message` returned by `POST /api/v1/bridge/wallets/challenge` echoed back verbatim, and the EIP-191 signature over it.\n\nThe address recovered from the signature must equal `address`, and the account named in the challenge must be the authenticated account. The first verified wallet becomes the default. Idempotent: re-registering an address already registered to the account returns the existing record. Registering a *different* address while one is already registered is rejected with `409` / `wallet_already_registered`: an account holds one wallet in this cut and replacement is not supported, so the request is a rejection rather than an update.\n\nError codes: `invalid_challenge`, `challenge_expired`, `signature_mismatch` and `account_mismatch` on `400`; `wallet_already_registered` on `409`.",
+        "description": "Register an ownership-proven wallet as the account's withdrawal sink. Submit the `address`, the `message` returned by `POST /api/v1/bridge/wallets/challenge` echoed back verbatim, and the EIP-191 signature over it.\n\nThe address recovered from the signature must equal `address`, and the account named in the challenge must be the authenticated account. The first verified wallet becomes the default. Idempotent: re-registering an address already registered to the account returns the existing record. Registering a *different* address while one is already registered is rejected with `409` / `wallet_already_registered`: an account holds one wallet in this cut and replacement is not supported, so the request is a rejection rather than an update.\n\nError codes: `invalid_address`, `invalid_challenge`, `challenge_expired`, `signature_mismatch` and `account_mismatch` on `400`; `wallet_already_registered` on `409`; `wallet_registration_unavailable` on `503` when the deployment has no challenge key configured.",
         "operationId": "registerBridgeWallet",
         "security": [
           {
@@ -5178,6 +5181,9 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/BridgeUnavailable"
           }
         }
       },
@@ -5307,6 +5313,22 @@
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/BridgeError"
+            }
+          }
+        }
+      },
+      "BridgeUnavailable": {
+        "description": "The operation is not available on this deployment (e.g. wallet registration has no challenge key configured). Not transient: this reflects deployment configuration, so retrying will not succeed.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/BridgeError"
+            },
+            "example": {
+              "error": {
+                "code": "wallet_registration_unavailable",
+                "message": "wallet registration is not configured on this deployment"
+              }
             }
           }
         }
