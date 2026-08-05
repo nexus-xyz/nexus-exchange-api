@@ -7026,6 +7026,16 @@
       "LiquidationAlert": {
         "type": "object",
         "description": "Pre-liquidation risk warning for one account, delivered on the `liquidations` channel. Edge-triggered: emitted once per worsening severity transition, never on recovery, and never repeated while a severity holds.",
+        "required": [
+          "account_id",
+          "market_id",
+          "severity",
+          "equity",
+          "maintenance_margin",
+          "sequence",
+          "epoch",
+          "emitted_at"
+        ],
         "properties": {
           "account_id": {
             "type": "string",
@@ -7075,6 +7085,15 @@
       "PortfolioLiquidation": {
         "type": "object",
         "description": "Terminal notification on the `liquidations` channel: the account's cross-margin positions have already been closed out. Not a warning — no action is available to the holder.",
+        "required": [
+          "account_id",
+          "closures",
+          "equity_before",
+          "equity_after",
+          "sequence",
+          "epoch",
+          "emitted_at"
+        ],
         "properties": {
           "account_id": {
             "type": "string",
@@ -7114,6 +7133,12 @@
       "PortfolioLiquidationClosure": {
         "type": "object",
         "description": "One market's forced close within a portfolio liquidation.",
+        "required": [
+          "market_id",
+          "position_size_closed",
+          "settlement_price",
+          "settlement_amount"
+        ],
         "properties": {
           "market_id": {
             "type": "string"
