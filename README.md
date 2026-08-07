@@ -83,6 +83,14 @@ export SECRET="...hex..."
 
 The key is scoped to the [network](#networks) whose host you created it on and is
 invalid on any other — mint a separate key per network rather than reusing one.
+`POST /keys` takes no network parameter, so the host you call it on *is* the
+binding decision. On any other host the key is refused with the same opaque
+`401` as a key that never existed, deliberately, so a key id cannot be probed
+across networks: a `401` right after a base-URL change means the credential and
+the host disagree, and must never be retried against the other network. Listing
+and revocation are scoped the same way — `GET /keys` shows only this host's keys,
+and a `404` from `DELETE /keys/{key_id}` is not proof that a key is gone. Revoke
+on the host that minted it.
 
 ### 3. Deposit collateral
 
