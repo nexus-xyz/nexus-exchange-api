@@ -83,6 +83,14 @@ export SECRET="...hex..."
 
 The key is scoped to the [network](#networks) whose host you created it on and is
 invalid on any other — mint a separate key per network rather than reusing one.
+`POST /keys` takes no network parameter, so the host you call it on *is* the
+binding decision. On any other host the key is refused with the same opaque
+`401` as a key that never existed, deliberately, so a key id cannot be probed
+across networks: a `401` right after a base-URL change means the credential and
+the host disagree, and must never be retried against the other network. Listing
+and revocation are scoped the same way — `GET /keys` shows only this host's keys,
+and a `404` from `DELETE /keys/{key_id}` is not proof that a key is gone. Revoke
+on the host that minted it.
 
 ### 3. Deposit collateral
 
@@ -226,11 +234,14 @@ Three independent budgets. Spending one does not spend the others:
 |---|---|---|---|---|---|
 | `Pro` | 20/s | 20/s | 5 | 50 | 10/s |
 | `MarketMaker` | 2,000/s | 2,000/s | 100 | 1,000 | 50/s |
-| `Unlimited` (gateway keys) | per-IP, 50/s | exempt | exempt | exempt | exempt |
+| `Unlimited` (gateway keys) | per-IP, 50/s | per-IP, 50/s (same bucket as reads) | exempt | exempt | exempt |
 
-Order writes (`POST`/`PATCH`/`DELETE` under `/orders`) are charged to the trading
-bucket *instead of* the request bucket, so a healthy `x-ratelimit-remaining` says
-nothing about your order-placement headroom.
+Order writes (`POST`/`PATCH`/`DELETE` under `/orders` — including
+`POST /orders/preview`) are charged to the trading bucket *instead of* the
+request bucket, so a healthy `x-ratelimit-remaining` says nothing about your
+order-placement headroom. That independence does not apply to `Unlimited`, whose
+reads and order writes share one per-IP bucket; its WS exemptions are from the
+per-account ceilings only, and a per-IP connection cap still binds.
 
 Headers: `x-ratelimit-limit` and `x-ratelimit-remaining` on every authenticated
 response; `x-ratelimit-reset` and `retry-after` on a `429` only. Note the units
