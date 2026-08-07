@@ -5877,13 +5877,17 @@
       "FundingPremiumSample": {
         "type": "object",
         "description": "One premium-index observation between settlements, as served by `/markets/{market_id}/funding-samples`.\n\nCarries the premium and its timestamp, and nothing else. The settled funding rate, mark price and oracle price are properties of a settled *window*, not of an intra-window sample, and the event these samples are folded from does not carry them. Read `/markets/{market_id}/funding` for those — it returns `FundingSample`.",
+        "required": [
+          "timestamp",
+          "premium_index"
+        ],
         "properties": {
           "timestamp": {
             "$ref": "#/components/schemas/TimestampMs"
           },
           "premium_index": {
             "$ref": "#/components/schemas/Decimal",
-            "description": "`(mark_price - oracle_price) / oracle_price` at the sample instant."
+            "description": "`(trade_reference_price - oracle_price) / oracle_price` at the sample instant — the perpetual's own traded reference against the index, not the mark price.\n\nReads `0` until the market has traded: with no trade reference available the value falls back to the oracle price, which makes the numerator exactly zero. A long run of `\"0\"` samples means the market has not traded, not that the perpetual is at parity with spot."
           }
         }
       },
