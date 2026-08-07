@@ -221,13 +221,34 @@ The example uses the current base. On a per-network host the WebSocket origin is
 
 ## Rate limits
 
-| Tier | Limit |
-|---|---|
-| API key (standard) | 20 req/s |
-| IP (unauthenticated) | 50 req/s |
-| MarketMaker | 2,000 req/s |
+The budget is **weight per second, not requests per second**. Most calls cost one
+unit; heavy aggregate reads (`/account/summary`, `/fills`, `/orders/history`,
+`/account/portfolio-history`) cost 5; a batch order submit costs
+`1 + floor(order_count / 40)`. A Pro key at 20/s gets 20 ticker reads per second
+— or 4 `/fills` reads. Operations that cost more carry
+`x-nexus-rate-limit-weight` in the spec; absence means 1.
 
-Rate limit headers: `x-ratelimit-limit`, `x-ratelimit-remaining`. Exceeded → `429 Too Many Requests` with `Retry-After`.
+Three independent budgets. Spending one does not spend the others:
+
+| Tier | Requests | Trading actions | WS conns | WS subs | WS frames |
+|---|---|---|---|---|---|
+| `Pro` | 20/s | 20/s | 5 | 50 | 10/s |
+| `MarketMaker` | 2,000/s | 2,000/s | 100 | 1,000 | 50/s |
+| `Unlimited` (gateway keys) | per-IP, 50/s | per-IP, 50/s (same bucket as reads) | exempt | exempt | exempt |
+
+Order writes (`POST`/`PATCH`/`DELETE` under `/orders` — including
+`POST /orders/preview`) are charged to the trading bucket *instead of* the
+request bucket, so a healthy `x-ratelimit-remaining` says nothing about your
+order-placement headroom. That independence does not apply to `Unlimited`, whose
+reads and order writes share one per-IP bucket; its WS exemptions are from the
+per-account ceilings only, and a per-IP connection cap still binds.
+
+Headers: `x-ratelimit-limit` and `x-ratelimit-remaining` on every authenticated
+response; `x-ratelimit-reset` and `retry-after` on a `429` only. Note the units
+differ — `remaining` counts weight-1 requests, `retry-after` is weighted.
+Exceeded → `429 Too Many Requests`, body `{"code": "RATE_LIMIT_EXCEEDED", ...}`,
+retryable. `GET /account/rate-limit` reports the request budget and is free to
+poll. Ceilings are per-deployment configuration, not contract.
 
 ## Markets
 
