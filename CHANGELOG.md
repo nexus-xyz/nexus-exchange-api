@@ -8,6 +8,13 @@ Pre-1.0 versioning convention:
 
 ---
 
+## [0.8.1](https://github.com/nexus-xyz/nexus-exchange-api/compare/v0.8.0...v0.8.1) (2026-08-10)
+
+
+### Bug Fixes
+
+* give /funding-samples its own schema (ENG-8779) ([#72](https://github.com/nexus-xyz/nexus-exchange-api/issues/72)) ([7c23d0f](https://github.com/nexus-xyz/nexus-exchange-api/commit/7c23d0f4c3343cfc2af4222b0b1a5d676bcb9d58))
+
 ## [0.8.0](https://github.com/nexus-xyz/nexus-exchange-api/compare/v0.7.3...v0.8.0) (2026-08-10)
 
 
