@@ -8,6 +8,20 @@ Pre-1.0 versioning convention:
 
 ---
 
+## [0.8.0](https://github.com/nexus-xyz/nexus-exchange-api/compare/v0.7.3...v0.8.0) (2026-08-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* swap operationId values for the WebSocket token endpoints ([#40](https://github.com/nexus-xyz/nexus-exchange-api/issues/40))
+
+### Features
+
+* document cancellation_reason and stp on the order contract (ENG-9203) ([#76](https://github.com/nexus-xyz/nexus-exchange-api/issues/76)) ([c2f8013](https://github.com/nexus-xyz/nexus-exchange-api/commit/c2f80135e60d6d206a0c7dc6b1ef30f6116ba03a))
+* document environment-scoped API key semantics and network binding (ENG-6449) ([#77](https://github.com/nexus-xyz/nexus-exchange-api/issues/77)) ([73d91d2](https://github.com/nexus-xyz/nexus-exchange-api/commit/73d91d2d1a00a96e2642c5dc828306c2ea5636c4))
+* document the rate-limit model — weights, resource classes, headers (ENG-6451) ([#78](https://github.com/nexus-xyz/nexus-exchange-api/issues/78)) ([b7c901c](https://github.com/nexus-xyz/nexus-exchange-api/commit/b7c901cbacab69e73d683307e06775d563544fb6))
+* swap operationId values for the WebSocket token endpoints ([#40](https://github.com/nexus-xyz/nexus-exchange-api/issues/40)) ([462f5d9](https://github.com/nexus-xyz/nexus-exchange-api/commit/462f5d92253d75fea392475a43080da3fc930060))
+
 ## [0.7.3](https://github.com/nexus-xyz/nexus-exchange-api/compare/v0.7.2...v0.7.3) (2026-08-05)
 
 
