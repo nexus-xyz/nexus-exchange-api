@@ -1,13 +1,35 @@
 # Contributing to the Nexus Exchange API spec
 
-This repository is the **source of truth** for the Nexus Exchange API. The
-artifact is [`openapi.json`](./openapi.json) — a single OpenAPI 3 document
-describing every REST and WebSocket endpoint. There is no SDK or runnable code
-here; the spec itself is what we ship, validated by CI and released as a
-versioned, downloadable asset.
+This repository **publishes** the Nexus Exchange API contract. The artifact is
+[`openapi.json`](./openapi.json) — a single OpenAPI 3 document describing every
+REST and WebSocket endpoint — validated by CI and released as a versioned,
+downloadable asset that the SDKs pin.
 
-If you found an inaccuracy or want to propose a change, thank you — this guide
-explains how.
+> **`openapi.json` is generated. Its source of truth is the Nexus monorepo, at
+> `eng/apps/exchange/api/openapi.json`.**
+>
+> The monorepo publishes the contract that a production deploy is *actually
+> serving*, and release-please here cuts the tag. So the spec in this repo
+> describes endpoints that exist and are live, rather than endpoints that are
+> planned.
+>
+> That direction reversed in ENG-5886 (EDR-010). This repo used to be canonical,
+> with the monorepo vendoring a released tag from it. The cost of that shape: the
+> spec was published and externally visible while the implementation was still in
+> review, shipping one route took four coordinated steps across two repos, and
+> the published contract could document operations nothing served — five
+> `/v1/bridge` operations sat here for four weeks with no implementation behind
+> them, and three SDKs generated dead client methods from them.
+>
+> A PR editing `openapi.json` on any branch other than the publish bot's or
+> release-please's fails the `Spec Source of Truth` check. That is not
+> bureaucracy: an edit here is overwritten by the next production publish, so
+> without the check it would merge, pass CI, cut a release, and then silently
+> disappear.
+
+If you found an inaccuracy, thank you — **open an issue here** and we will fix it
+at the source. If you are on the Nexus team, the change goes in the monorepo. This
+guide covers both, plus the versioning rules that still govern every release.
 
 ## What lives here
 
@@ -19,13 +41,29 @@ explains how.
 
 ## Proposing a change
 
-### 1. Edit `openapi.json`
+### 1. Make the change in the monorepo, not here
 
-Make your change directly in `openapi.json`. Keep it valid OpenAPI 3 and make
-sure every operation has a unique `operationId` — code generators downstream
-depend on those being present and stable.
+Edit `eng/apps/exchange/api/openapi.json` in `nexus-xyz/nexus`, **in the same PR
+as the implementation that serves it**. Keep it valid OpenAPI 3 and make sure
+every operation has a unique `operationId` — code generators downstream depend on
+those being present and stable.
+
+Two gates there enforce the pairing, so this is not a convention you have to
+remember: the `Exchange API Spec` required check fails a route change with no spec
+change, and the indexer's conformance test fails a documented operation that no
+route serves.
+
+The contract then arrives here on the next production deploy, as a PR from the
+publish bot. Nothing needs doing in this repo.
+
+**Outside contributors:** open an issue describing the inaccuracy. You cannot land
+a spec change here directly any more — but the issue is the right entry point and
+we will make the change at the source.
 
 ### 2. Validate locally
+
+Run these against your monorepo working copy (`eng/apps/exchange/api/openapi.json`);
+they are the same checks CI runs here.
 
 CI runs [Redocly](https://redocly.com/docs/cli/) to lock in structural
 validity and the `operationId` guarantees. Run the exact same check before you
@@ -122,6 +160,14 @@ deliberately:
 2. Add the `breaking-change` label to the PR to acknowledge and unblock it.
 
 This makes every break a conscious, two-step decision.
+
+**This applies to the publish bot's PRs too, and step 2 is a human's job.** The
+bot classifies its own commit from the diff, so it opens a breaking publish with a
+`feat!:` subject already correct — but it does not label its own PR, on purpose.
+`breaking-change` is an acknowledgement that a person accepts the downstream
+ripple, and a bot cannot make that acknowledgement on our behalf. So a breaking
+publish arrives blocked, and the reviewer adds the label. Expect that, rather than
+reading the red check as a bot failure.
 
 ## Downstream ripple
 
