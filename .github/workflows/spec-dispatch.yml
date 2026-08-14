@@ -23,32 +23,52 @@ name: Notify SDKs of spec release
 # The default GITHUB_TOKEN cannot dispatch to other repositories. Token scope is
 # the one thing that genuinely fails a leg (403/404), so it fails loudly below.
 #
-# ⚠️ TWO PREREQUISITES ARE NOT MET YET (both ENG-4149, both verified 2026-07-31):
+# How this workflow is reached (ENG-8866)
 #
-#   1. `SDK_DISPATCH_TOKEN` is not set on this repo — no repo secret, and no org
-#      secret visible to it. Every leg fails fast with the explicit error below
-#      until it is provisioned.
-#   2. The `release: published` trigger does not fire at all. release-please cuts
-#      the release with the default GITHUB_TOKEN, and GitHub does not start
-#      workflow runs from events created by that token. Evidence: this file has
-#      been on `main` since 2026-06-26, v0.7.2 was released 2026-07-27, and this
-#      workflow has zero runs. Fixing it is infra work in release-please.yml
-#      (hand the action the ENG-4149 app token) — not a change to this file.
+# `release-please.yml` CALLS this workflow (`workflow_call`) in the same run that
+# cuts the release. That is the real path, and it is deliberate: the Release is
+# created by the default GITHUB_TOKEN, and GitHub does not start workflow runs
+# from events created by that token (the recursion guard). So the `release:
+# published` trigger below CANNOT fire for a release-please release — this file
+# sat on `main` from 2026-06-26 through six releases (v0.7.0 … v0.8.1) with
+# literally zero runs. Calling the workflow removes the event from the loop
+# entirely, so no credential is needed to make the fan-out start.
 #
-# Until both land, `workflow_dispatch` is the working path: run this workflow
-# manually with the release tag after a release.
+# The `release: published` trigger is kept anyway, because it is not dead in
+# general: a release published by a HUMAN (UI or `gh release create`) does
+# deliver the event, and release-please is not involved in that path, so the two
+# never both fire today. ⚠️ If release-please.yml is ever changed to cut releases
+# under a PAT or App-installation token, the event WOULD start firing and every
+# release would fan out twice — at that point drop one of the two paths.
+#
+# ⚠️ ONE PREREQUISITE IS STILL NOT MET (ENG-4149, verified 2026-08-14):
+# `SDK_DISPATCH_TOKEN` is not set on this repo — no repo secret, and no org
+# secret visible to it. Every leg now fails fast with the explicit error below,
+# and because this workflow is called from release-please.yml that failure turns
+# the release run itself red on the release commit instead of being invisible.
+# The release is still cut correctly; only the fast-path fan-out is skipped, and
+# each SDK's daily poll picks the spec up within a day regardless.
 
 on:
   release:
     types: [published]
-  # Manual path. Two uses: it is the only working trigger until prerequisite 2
-  # above is fixed, and it re-runs the fan-out for a tag whose legs failed (e.g.
-  # the token was not yet scoped to one target).
+  # Called by release-please.yml immediately after a release is cut. This is the
+  # trigger that actually runs for a release-please release; see the note above.
+  workflow_call:
+    inputs:
+      tag:
+        description: "Spec release tag to fan out (e.g. v0.7.2)."
+        required: true
+        type: string
+  # Manual path: re-run the fan-out for a tag whose legs failed (e.g. the token
+  # was not yet scoped to one target), or fan out a tag released before this
+  # wiring existed.
   workflow_dispatch:
     inputs:
       tag:
         description: "Spec release tag to fan out (e.g. v0.7.2)."
         required: true
+        type: string
 
 permissions:
   contents: read
@@ -58,14 +78,19 @@ concurrency:
   # run for that same tag instead of racing it. Distinct tags still fan out
   # concurrently, and nothing is cancelled — a half-delivered fan-out is worse
   # than a slow one, since the undelivered targets fall back to the daily poll.
-  group: spec-dispatch-${{ github.event.release.tag_name || github.event.inputs.tag }}
+  # `inputs.tag` covers both workflow_call and workflow_dispatch; it is null on a
+  # `release` event, where the tag comes from the release payload instead.
+  group: spec-dispatch-${{ github.event.release.tag_name || inputs.tag }}
   cancel-in-progress: false
 
 jobs:
   dispatch:
     # A prerelease must never advance an SDK's pin — the SDKs pin stable spec
     # releases. `release: published` fires for prereleases too, so exclude them
-    # here rather than relying on every handler to notice.
+    # here rather than relying on every handler to notice. On the workflow_call
+    # and workflow_dispatch paths there is no release payload to inspect, and the
+    # vX.Y.Z tag validation below is what keeps a prerelease tag out (it rejects
+    # anything with a `-rc.N` suffix).
     if: ${{ github.event_name != 'release' || !github.event.release.prerelease }}
     runs-on: ubuntu-latest
     strategy:
@@ -94,14 +119,15 @@ jobs:
           #   - nexus-xyz/nexus
     steps:
       - name: Dispatch spec-released to ${{ matrix.target }}
+        id: dispatch
         env:
           GH_TOKEN: ${{ secrets.SDK_DISPATCH_TOKEN }}
           TARGET: ${{ matrix.target }}
           # Passed via env (not interpolated into the script body) so the tag is
-          # data, not code. The release tag_name is repo-controlled, but the
-          # workflow_dispatch input is whatever a human typed — hence the
-          # validation below.
-          TAG: ${{ github.event.release.tag_name || github.event.inputs.tag }}
+          # data, not code. The release tag_name and the workflow_call input are
+          # repo-controlled, but the workflow_dispatch input is whatever a human
+          # typed — hence the validation below.
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
         run: |
           set -euo pipefail
           if [ -z "${GH_TOKEN:-}" ]; then
@@ -134,3 +160,29 @@ jobs:
             --method POST \
             -f event_type="spec-released" \
             -F "client_payload[tag]=${TAG}"
+
+      # A red job is only a signal if someone reads it, and nobody is emailed
+      # about a bot-triggered run. Writing the outcome to the run summary puts a
+      # plain-language line on the release run itself — including on green, so
+      # silence is distinguishable from success — and says explicitly that a
+      # failed fan-out does NOT mean the release failed.
+      - name: Record outcome in the run summary
+        if: always()
+        env:
+          TARGET: ${{ matrix.target }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+          OUTCOME: ${{ steps.dispatch.outcome }}
+        run: |
+          set -euo pipefail
+          # Same sanitising as the dispatch step: the tag reaches the summary on
+          # the failure path too, and the workflow_dispatch input is untrusted.
+          safe_tag=$(printf '%s' "${TAG:-<unset>}" | tr -d '\000-\037' | cut -c1-64)
+          # Backticks are escaped rather than single-quoted so they stay Markdown
+          # and are not read as command substitution.
+          if [ "${OUTCOME}" = "success" ]; then
+            printf -- "- \`%s\` — dispatched \`spec-released\` for \`%s\`.\n" \
+              "${TARGET}" "${safe_tag}" >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf -- "- \`%s\` — **NOT dispatched** (\`%s\`) for \`%s\`. The release itself is fine; this SDK falls back to its daily poll and picks the spec up within a day. See the job log, and ENG-4149 if \`SDK_DISPATCH_TOKEN\` is still unprovisioned.\n" \
+              "${TARGET}" "${OUTCOME}" "${safe_tag}" >> "$GITHUB_STEP_SUMMARY"
+          fi
