@@ -21,9 +21,10 @@ downloadable asset that the SDKs pin.
 > `/v1/bridge` operations sat here for four weeks with no implementation behind
 > them, and three SDKs generated dead client methods from them.
 >
-> A PR editing `openapi.json` on any branch other than the publish bot's or
-> release-please's fails the `Spec Source of Truth` check. That is not
-> bureaucracy: an edit here is overwritten by the next production publish, so
+> A PR editing `openapi.json` fails the `Spec Source of Truth` check unless it
+> comes from the publish bot or release-please — the check requires a bot author
+> as well as the branch name, so naming a branch after the bot does not get a
+> human past it. That is not bureaucracy: an edit here is overwritten by the next production publish, so
 > without the check it would merge, pass CI, cut a release, and then silently
 > disappear.
 
