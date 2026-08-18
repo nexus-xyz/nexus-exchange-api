@@ -62,31 +62,49 @@ we will make the change at the source.
 
 ### 2. Validate locally
 
-Run these against your monorepo working copy (`eng/apps/exchange/api/openapi.json`);
-they are the same checks CI runs here.
+These are the same checks CI runs here, but you now run them **in your monorepo
+working copy**, against `eng/apps/exchange/api/openapi.json`. The commands below
+spell that path out so a copy-paste does not silently lint the published copy in
+this repo instead.
 
 CI runs [Redocly](https://redocly.com/docs/cli/) to lock in structural
 validity and the `operationId` guarantees. Run the exact same check before you
 push:
 
 ```bash
-npx -y @redocly/cli@2 lint openapi.json
+# from the root of your nexus-xyz/nexus checkout
+npx -y @redocly/cli@2 lint eng/apps/exchange/api/openapi.json
 ```
 
-To preview how your change classifies against `main` — additive versus
-breaking — run [`oasdiff`](https://github.com/oasdiff/oasdiff) the same way CI
-does:
+To preview how your change classifies — additive versus breaking — run
+[`oasdiff`](https://github.com/oasdiff/oasdiff) the same way CI does. Compare
+against the **published** spec, because that is the baseline the classification
+is made from: the publish bot diffs the served contract against this repo's
+`openapi.json` to pick its commit prefix.
 
 ```bash
-# Save the current main spec, then compare your working copy against it.
-git show origin/main:openapi.json > /tmp/base.json
+# from the root of your nexus-xyz/nexus checkout
+SPEC=eng/apps/exchange/api/openapi.json
+
+# The currently-published spec, fetched from this repo's default branch.
+curl -fsSL -o /tmp/base.json \
+  https://raw.githubusercontent.com/nexus-xyz/nexus-exchange-api/main/openapi.json
+
+# info.version is owned by release-please and is pinned out of the publish diff,
+# so normalise it away or every comparison reports a spurious version change.
+jq --arg v "$(jq -r '.info.version' /tmp/base.json)" '.info.version = $v' \
+  "$SPEC" > /tmp/candidate.json
 
 # Human-readable summary of every change.
-oasdiff changelog /tmp/base.json openapi.json
+oasdiff changelog /tmp/base.json /tmp/candidate.json
 
 # Breaking changes only (this is the gate CI enforces).
-oasdiff breaking /tmp/base.json openapi.json --fail-on ERR
+oasdiff breaking /tmp/base.json /tmp/candidate.json --fail-on ERR
 ```
+
+The monorepo also has its own gates on the same file — the `Exchange API Spec`
+required check and the indexer's conformance test — so these are a fast local
+preview, not the enforcement.
 
 ### 3. Write conventional-commit PRs
 

@@ -1,0 +1,126 @@
+name: Spec Source of Truth
+
+# `openapi.json` in this repository is GENERATED. Its source of truth is the
+# Nexus monorepo at `eng/apps/exchange/api/openapi.json`, and it arrives here by
+# way of `deploy-exchange-services.yml`'s `publish-spec-to-public-repo` job,
+# which publishes the contract a production deploy is actually serving.
+#
+# That reversed in ENG-5886 / EDR-010. This repository used to be canonical and
+# the monorepo vendored a released tag from it.
+#
+# Why this guard exists: with two writers and no gate, a hand-authored edit here
+# is silently clobbered by the next bot publish — the same drift the inversion
+# was meant to remove, just pointing the other way. The edit would look merged,
+# pass CI, cut a release, and then vanish on the next production deploy. Failing
+# the PR is the only way that stays visible.
+#
+# Three writers are allowed, and nothing else:
+#   1. the monorepo publish bot, on `bot/publish-served-spec`;
+#   2. release-please, on `release-please--branches--main`, which owns
+#      `info.version` via `extra-files` in release-please-config.json — it is the
+#      one actor that SHOULD write a version number here;
+#   3. a human holding the `spec-reconciliation` label, for the case where this
+#      repo genuinely has to be corrected ahead of the monorepo (an incident, or
+#      undoing a bad publish). It is deliberately a label rather than an
+#      exemption for maintainers: it leaves a mark on the PR, and the monorepo's
+#      `not-behind-public` check will then flag the divergence there too, so the
+#      correction cannot be forgotten.
+#
+# ── Two things a reader needs to know about how far this actually reaches ─────
+#
+# BOTH machine arms require the PR author to be a Bot, not merely a branch name.
+# A branch name is chosen by whoever opens the PR, so matching on it alone would
+# let anyone with push access here name a branch `bot/publish-served-spec` and
+# edit the spec unchallenged (raised in review of #81). Pairing it with
+# `user.type == 'Bot'` closes that, because an app-authored PR is the only way to
+# get that value — a human cannot set it.
+#
+# It is deliberately NOT pinned to a specific bot login yet. The publish job has
+# never run (ENG-10325 — the runner GitHub App is not yet installed on this
+# repo), so nothing has demonstrated the login its app token opens PRs under, and
+# `admin:org` is needed to read it from the installation. Guessing it would make
+# the first bot publish fail the guard — a self-inflicted outage of the only
+# write path this repo is supposed to accept. ENG-10966 tightens both arms to the
+# real logins once one bot PR has been observed; until then `Bot` + branch is the
+# strongest check that cannot lock out the writer it exists to protect.
+#
+# THIS CHECK DOES NOT RUN ON release-please's OWN PRs, and must not be made a
+# required check until that changes. release-please cuts its PRs with the default
+# `GITHUB_TOKEN`, and GitHub does not start workflow runs from events created by
+# that token, so no `pull_request` workflow is delivered for them at all — #79 and
+# #80 both show zero checks reported. That is the same recursion guard as
+# ENG-8866. So the release-please arm below is belt-and-braces, not load-bearing:
+# it fails open today. Making this a required check while that holds would block
+# every release PR forever on a check that can never report. If release-please is
+# ever handed an app or PAT token (ENG-8866 / ENG-10966), the arm starts doing
+# real work and the check becomes safe to require.
+#
+# The publish bot's PRs are NOT affected by that gap: the monorepo job mints an
+# app installation token (`actions/create-github-app-token@v3`), and app tokens do
+# deliver `pull_request` events. The guard is therefore visible on the one PR
+# class that can actually rewrite the whole contract.
+
+on:
+  pull_request:
+    paths:
+      - 'openapi.json'
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    name: openapi.json is generated, not hand-authored
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reject hand-authored spec edits
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          # "Bot" only for an app-authored PR; a human is "User". Paired with the
+          # branch name below so a branch name alone is not authorisation.
+          AUTHOR_TYPE: ${{ github.event.pull_request.user.type }}
+          LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+        run: |
+          if [ "$AUTHOR_TYPE" = "Bot" ]; then
+            case "$HEAD_REF" in
+              bot/publish-served-spec)
+                echo "Allowed: the monorepo publish bot (${AUTHOR})."
+                exit 0
+                ;;
+              release-please--branches--main)
+                echo "Allowed: release-please owns info.version here (${AUTHOR})."
+                exit 0
+                ;;
+            esac
+          fi
+
+          if printf ',%s,' "$LABELS" | grep -q ',spec-reconciliation,'; then
+            echo "Allowed: 'spec-reconciliation' label present."
+            echo "::warning::This PR edits the generated spec directly. Land the same change in the monorepo (eng/apps/exchange/api/openapi.json) or the next production publish will overwrite it."
+            exit 0
+          fi
+
+          {
+            echo "::error::openapi.json is generated from the Nexus monorepo and must not be edited here."
+            echo ""
+            echo "Branch '${HEAD_REF}' (author: ${AUTHOR}, type: ${AUTHOR_TYPE}) is not an allowed writer."
+            echo ""
+            echo "This file is published by the monorepo after a production deploy, so it"
+            echo "describes what the exchange is actually serving. An edit made here would be"
+            echo "silently reverted by the next publish — it would merge, pass CI, cut a"
+            echo "release, and then disappear."
+            echo ""
+            echo "To change the API contract:"
+            echo "  1. Edit eng/apps/exchange/api/openapi.json in nexus-xyz/nexus, in the SAME"
+            echo "     PR as the implementation that serves it."
+            echo "  2. Merge there. The contract publishes here automatically on the next"
+            echo "     production deploy, and release-please cuts the tag."
+            echo ""
+            echo "Genuinely need to correct this repo first (incident, or undoing a bad"
+            echo "publish)? Add the 'spec-reconciliation' label, and land the matching change"
+            echo "in the monorepo — otherwise the next publish overwrites you."
+            echo ""
+            echo "Background: EDR-010 in the monorepo (product/nexus-exchange/decisions/)."
+          } >&2
+          exit 1
