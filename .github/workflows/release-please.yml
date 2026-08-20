@@ -28,6 +28,10 @@ concurrency:
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    # Consumed by the spec-dispatch job below.
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
       - uses: googleapis/release-please-action@v5
         id: release
@@ -45,3 +49,26 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh release upload "${{ steps.release.outputs.tag_name }}" openapi.json --clobber
+
+  # Fan the release out to the downstream SDKs (ENG-8866).
+  #
+  # `spec-dispatch.yml` also declares `on: release: [published]`, but that event
+  # can never be delivered for the release cut above: release-please creates it
+  # with the default GITHUB_TOKEN, and GitHub does not start workflow runs from
+  # events created by that token. The workflow consequently had zero runs across
+  # six releases. Calling it directly is preferred over handing release-please a
+  # PAT or App-installation token, because it needs no credential at all — the
+  # fan-out simply becomes part of this run.
+  #
+  # It also fixes the visibility half: a failed leg now turns THIS run red on the
+  # release commit, where a failure of a separate never-triggered workflow was
+  # unobservable by construction.
+  spec-dispatch:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
+    uses: ./.github/workflows/spec-dispatch.yml
+    with:
+      tag: ${{ needs.release-please.outputs.tag_name }}
+    # spec-dispatch.yml needs SDK_DISPATCH_TOKEN, which a called workflow cannot
+    # see unless it is passed in.
+    secrets: inherit
