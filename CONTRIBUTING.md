@@ -21,12 +21,20 @@ downloadable asset that the SDKs pin.
 > `/v1/bridge` operations sat here for four weeks with no implementation behind
 > them, and three SDKs generated dead client methods from them.
 >
-> A PR editing `openapi.json` fails the `Spec Source of Truth` check unless it
-> comes from the publish bot or release-please — the check requires a bot author
-> as well as the branch name, so naming a branch after the bot does not get a
-> human past it. That is not bureaucracy: an edit here is overwritten by the next production publish, so
-> without the check it would merge, pass CI, cut a release, and then silently
-> disappear.
+> A PR editing `openapi.json` turns the `Spec Source of Truth` check red unless
+> it comes from the publish bot or release-please — the check requires a bot
+> author as well as the branch name, so naming a branch after the bot does not
+> get a human past it. That is not bureaucracy: an edit here is overwritten by
+> the next production publish, so without the check it would merge, pass CI, cut
+> a release, and then silently disappear.
+>
+> **The check makes that visible; it does not by itself prevent it.** `main`
+> carries no required status checks, so the guard is a red signal to the CODEOWNER
+> whose approval *is* the gate. It also cannot be made required as things stand:
+> release-please's own PRs are opened with the default `GITHUB_TOKEN`, which
+> starts no workflow runs, so a required check would never report on them and
+> every release PR would block forever. Closing the write path at the source —
+> restricted pushes, forking disabled, human PRs auto-closed — is ENG-10966.
 
 If you found an inaccuracy, thank you — **open an issue here** and we will fix it
 at the source. If you are on the Nexus team, the change goes in the monorepo. This
@@ -49,10 +57,24 @@ as the implementation that serves it**. Keep it valid OpenAPI 3 and make sure
 every operation has a unique `operationId` — code generators downstream depend on
 those being present and stable.
 
-Two gates there enforce the pairing, so this is not a convention you have to
+**Bump `info.version` in that same PR**, by the rule in the monorepo's
+`eng/apps/exchange/api/README.md` (ENG-11154): `0.MAJOR.MINOR`, non-breaking
+moves MINOR, breaking moves MAJOR and resets MINOR — unless the monorepo's MAJOR
+already leads the latest published tag here, in which case breaking moves MINOR
+too, because the release that eventually ships carries one MAJOR bump for the
+whole undeployed batch. "Breaking" there is anything `oasdiff` flags at **warning
+level or above**, which is wider than the error-level bar the CI gate in this repo
+uses. Every layer in the monorepo that announces the version moves with it; work
+from `.github/scripts/api-version-pins.json` and
+`python3 .github/scripts/api_version_pins_check.py`, never from a list in prose —
+a prose list there went stale exactly once and that is why the inventory is
+machine-readable.
+
+Three gates there enforce all of this, so none of it is a convention you have to
 remember: the `Exchange API Spec` required check fails a route change with no spec
-change, and the indexer's conformance test fails a documented operation that no
-route serves.
+change **and** a bump that does not follow the rule, `API version pins are
+registered and in sync` fails a version layer left behind, and the indexer's
+conformance test fails a documented operation that no route serves.
 
 The contract then arrives here on the next production deploy, as a PR from the
 publish bot. Nothing needs doing in this repo.
@@ -83,6 +105,13 @@ against the **published** spec, because that is the baseline the classification
 is made from: the publish bot diffs the served contract against this repo's
 `openapi.json` to pick its commit prefix.
 
+Diff the files **as they are**. An earlier version of this section normalised
+`info.version` out of the comparison, on the premise that release-please owned
+the number and the bot kept it out of the diff; since ENG-11154 neither is true —
+the version moves in your monorepo PR, the publish bot compares the whole
+document, and `info.version` is the one field the monorepo's required bump-size
+rule reads.
+
 ```bash
 # from the root of your nexus-xyz/nexus checkout
 SPEC=eng/apps/exchange/api/openapi.json
@@ -91,21 +120,20 @@ SPEC=eng/apps/exchange/api/openapi.json
 curl -fsSL -o /tmp/base.json \
   https://raw.githubusercontent.com/nexus-xyz/nexus-exchange-api/main/openapi.json
 
-# info.version is owned by release-please and is pinned out of the publish diff,
-# so normalise it away or every comparison reports a spurious version change.
-jq --arg v "$(jq -r '.info.version' /tmp/base.json)" '.info.version = $v' \
-  "$SPEC" > /tmp/candidate.json
-
 # Human-readable summary of every change.
-oasdiff changelog /tmp/base.json /tmp/candidate.json
+oasdiff changelog /tmp/base.json "$SPEC"
 
-# Breaking changes only (this is the gate CI enforces).
-oasdiff breaking /tmp/base.json /tmp/candidate.json --fail-on ERR
+# Breaking changes only (this is the gate CI enforces here, at ERR).
+oasdiff breaking /tmp/base.json "$SPEC" --fail-on ERR
 ```
 
-The monorepo also has its own gates on the same file — the `Exchange API Spec`
-required check and the indexer's conformance test — so these are a fast local
-preview, not the enforcement.
+Two things this preview does *not* tell you, both enforced in the monorepo: the
+bump rule reads `oasdiff` at **warning** level and above, so a clean `--fail-on
+ERR` run is not evidence that MINOR is the right bump; and the published baseline
+lags `main` by every merged spec change that has not been deployed, so it answers
+"how will the next publish classify" rather than "does my PR pass". The
+authoritative gates are the `Exchange API Spec` required check and the indexer's
+conformance test, both there, on your PR's own revision.
 
 ### 3. Write conventional-commit PRs
 
@@ -131,11 +159,21 @@ commit's body is assembled from the commit messages on the branch, never from
 the PR description, so a `BREAKING CHANGE:` footer written only in the PR
 description is dropped at merge and the break ships as a patch.
 
-You do **not** edit the version yourself. Spec PRs land on `main` without a
-version bump; release-please accumulates merged commits into a running release
-PR. Merging that release PR is the deliberate, batched release — it bumps
-`$.info.version` inside `openapi.json`, updates `CHANGELOG.md`, tags `vX.Y.Z`,
-cuts a GitHub Release, and attaches `openapi.json` as a release asset.
+You do **not** edit the version in this repo. Note where the number comes from,
+because it moved in ENG-11154: the monorepo PR that changes the contract bumps
+`info.version` by the rule above, and the publish commit carries a
+`Release-As: X.Y.Z` footer naming it, so release-please cuts exactly that tag
+instead of deriving one. Two actors computing a version from the same diff is the
+divergence the rule exists to prevent. A publish PR therefore *does* move
+`info.version` — that is expected, not a bot overstepping.
+
+The commit type still decides **whether** a release is cut and what the changelog
+says, and for a PR here that touches no spec (docs, CI) there is no `Release-As:`
+footer and release-please derives the number from the table above as it always
+did. Merging the release PR is still the deliberate, batched release — it
+reconciles `$.info.version` inside `openapi.json` (usually a no-op now, the
+publish having carried the number), updates `CHANGELOG.md`, tags `vX.Y.Z`, cuts a
+GitHub Release, and attaches `openapi.json` as a release asset.
 
 Squash-and-merge is the only method enabled here, and the source branch is
 deleted on merge — so one PR is always one commit on `main`, which is what makes
@@ -187,6 +225,14 @@ bot classifies its own commit from the diff, so it opens a breaking publish with
 ripple, and a bot cannot make that acknowledgement on our behalf. So a breaking
 publish arrives blocked, and the reviewer adds the label. Expect that, rather than
 reading the red check as a bot failure.
+
+Adding the label re-runs the check on its own — `api-diff.yml` and the spec guard
+both listen for `labeled`. That is worth stating because it was not true until
+this was fixed alongside the guard: with the default activity types, labelling
+started no run, and a manual re-run replays the original event payload (labels
+included), so the documented remedy could not clear the check it exists to clear.
+If a re-run ever *does* look stale, push an empty commit rather than re-running —
+`synchronize` always carries a fresh payload.
 
 ## Downstream ripple
 

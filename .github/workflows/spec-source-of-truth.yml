@@ -16,17 +16,17 @@ name: Spec Source of Truth
 #
 # Three writers are allowed, and nothing else:
 #   1. the monorepo publish bot, on `bot/publish-served-spec`;
-#   2. release-please, on `release-please--branches--main`, which owns
-#      `info.version` via `extra-files` in release-please-config.json — it is the
-#      one actor that SHOULD write a version number here;
+#   2. release-please, on `release-please--branches--main`. It no longer decides
+#      the version NUMBER — the monorepo's bump rule does (ENG-11154) and the
+#      publish commit carries it as `Release-As:` — but it is still the actor
+#      that reconciles `$.info.version` here via `extra-files` when cutting the
+#      tag, so it is an allowed writer;
 #   3. a human holding the `spec-reconciliation` label, for the case where this
 #      repo genuinely has to be corrected ahead of the monorepo (an incident, or
 #      undoing a bad publish). It is deliberately a label rather than an
-#      exemption for maintainers: it leaves a mark on the PR, and the monorepo's
-#      `not-behind-public` check will then flag the divergence there too, so the
-#      correction cannot be forgotten.
+#      exemption for maintainers: it leaves a mark on the PR.
 #
-# ── Two things a reader needs to know about how far this actually reaches ─────
+# ── What this reaches, and what it does not ───────────────────────────────────
 #
 # BOTH machine arms require the PR author to be a Bot, not merely a branch name.
 # A branch name is chosen by whoever opens the PR, so matching on it alone would
@@ -44,36 +44,112 @@ name: Spec Source of Truth
 # real logins once one bot PR has been observed; until then `Bot` + branch is the
 # strongest check that cannot lock out the writer it exists to protect.
 #
-# THIS CHECK DOES NOT RUN ON release-please's OWN PRs, and must not be made a
-# required check until that changes. release-please cuts its PRs with the default
-# `GITHUB_TOKEN`, and GitHub does not start workflow runs from events created by
-# that token, so no `pull_request` workflow is delivered for them at all — #79 and
-# #80 both show zero checks reported. That is the same recursion guard as
-# ENG-8866. So the release-please arm below is belt-and-braces, not load-bearing:
-# it fails open today. Making this a required check while that holds would block
-# every release PR forever on a check that can never report. If release-please is
+# THIS CHECK IS ADVISORY: it turns the PR red, it does not stop the merge. The
+# `main` ruleset carries no `required_status_checks` rule at all — one CODEOWNER
+# approval is the only gate — so a red guard is a signal to a reviewer, not a
+# block. Do NOT paper over that by adding it to the ruleset while the paragraph
+# below holds: it cannot report on release-please's PRs, so requiring it would
+# block every release PR forever. Enforcement that actually closes the write
+# path (restricted pushes, forking off, auto-closing human PRs) is ENG-10966;
+# this guard is the visible half, and the docs say so rather than implying a gate
+# that is not there (raised in review of #81).
+#
+# THIS CHECK DOES NOT RUN ON release-please's OWN PRs. release-please cuts them
+# with the default `GITHUB_TOKEN`, and GitHub does not start workflow runs from
+# events created by that token, so no `pull_request` workflow is delivered for
+# them at all — #79 and #80 both show zero checks reported. That is the same
+# recursion guard as ENG-8866. So the release-please arm below is
+# belt-and-braces, not load-bearing: it fails open today. If release-please is
 # ever handed an app or PAT token (ENG-8866 / ENG-10966), the arm starts doing
-# real work and the check becomes safe to require.
+# real work.
 #
 # The publish bot's PRs are NOT affected by that gap: the monorepo job mints an
 # app installation token (`actions/create-github-app-token@v3`), and app tokens do
 # deliver `pull_request` events. The guard is therefore visible on the one PR
 # class that can actually rewrite the whole contract.
+#
+# A `spec-reconciliation` edit HAS NO AUTOMATIC BACKSTOP, and the label's warning
+# says so. An earlier revision of this comment claimed the monorepo's
+# `not-behind-public` check would independently flag the divergence; ENG-10517
+# deleted that check, because requiring equality with the published spec made
+# every monorepo PR hostage to deploy cadence. `eng-exchange-api-vendored-check.yml`
+# now states outright that detecting an edit made directly in this repo "has no
+# home", and ENG-10531 is the canary for it, deliberately off the PR path. So the
+# label is an obligation on the person applying it: land the matching change in
+# the monorepo (`eng/apps/exchange/scripts/bump-api-spec.sh` pulls this file
+# back), or the next production publish silently overwrites the correction.
+#
+# This workflow cannot make itself tamper-proof. `pull_request` resolves the
+# workflow from the PR's HEAD, so a PR that edits the trigger below is judged by
+# its own edit — no paths filter here can change that. What makes such a PR
+# visible is that it is named in `paths`, so touching this file runs the guard and
+# annotates the run (see the step below), and what makes it reviewed is CODEOWNERS
+# covering `*` plus the ruleset's required CODEOWNER approval. Closing it
+# properly is enforcement at the source, ENG-10966, not another head-resolved
+# workflow. `pull_request_target` would be base-resolved, but it reports against
+# the base ref rather than the PR head, which makes it awkward to require later
+# and hands base-context tokens to fork events for no gain here.
 
 on:
   pull_request:
+    # `labeled`/`unlabeled` are load-bearing, not tidiness: `spec-reconciliation`
+    # is the documented remedy for a red guard, and the default activity types
+    # (opened, synchronize, reopened) mean applying it starts no run — while a
+    # manual re-run replays the original event payload, labels and all, so the
+    # remedy could never clear the check it exists to clear (raised in review of
+    # #81). `unlabeled` is the other half: removing the label must take the PR
+    # red again rather than leaving a stale green.
+    types: [opened, synchronize, reopened, labeled, unlabeled]
     paths:
       - 'openapi.json'
+      # This file, so an edit to the guard surfaces a run instead of nothing.
+      # Enforcement below is gated on the spec actually having changed, so a
+      # guard-only PR passes — it is announced, not blocked.
+      - '.github/workflows/spec-source-of-truth.yml'
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
   guard:
     name: openapi.json is generated, not hand-authored
     runs-on: ubuntu-latest
     steps:
+      # The paths filter above decides whether this job RUNS; it cannot say which
+      # of the two paths matched, and the two mean different things. Ask the API
+      # rather than checking out — no working tree is needed to read a file list,
+      # and nothing here should ever execute PR content.
+      - name: What does this PR touch?
+        id: touched
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          if ! gh api --paginate "repos/${REPO}/pulls/${PR}/files" \
+                 --jq '.[].filename' > /tmp/pr-files.txt; then
+            # Fail closed. "The lookup broke" must never be confusable with
+            # "the spec was not touched".
+            echo "::error::Could not list this PR's files, so whether openapi.json changed is unknown. Failing closed." >&2
+            exit 1
+          fi
+          spec=false
+          guard=false
+          if grep -qxF 'openapi.json' /tmp/pr-files.txt; then spec=true; fi
+          if grep -qxF '.github/workflows/spec-source-of-truth.yml' /tmp/pr-files.txt; then guard=true; fi
+          echo "spec=${spec}" >> "$GITHUB_OUTPUT"
+          echo "guard=${guard}" >> "$GITHUB_OUTPUT"
+          echo "openapi.json changed: ${spec}; this workflow changed: ${guard}"
+
+      - name: Announce an edit to the guard itself
+        if: steps.touched.outputs.guard == 'true'
+        run: |
+          echo "::warning::This PR edits the Spec Source of Truth guard itself. A pull_request workflow is resolved from the PR head, so this run reflects the PROPOSED guard, not the one on main — review the workflow change on its own terms."
+
       - name: Reject hand-authored spec edits
+        if: steps.touched.outputs.spec == 'true'
         env:
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
           AUTHOR: ${{ github.event.pull_request.user.login }}
@@ -89,7 +165,7 @@ jobs:
                 exit 0
                 ;;
               release-please--branches--main)
-                echo "Allowed: release-please owns info.version here (${AUTHOR})."
+                echo "Allowed: release-please reconciles info.version here (${AUTHOR})."
                 exit 0
                 ;;
             esac
@@ -97,7 +173,7 @@ jobs:
 
           if printf ',%s,' "$LABELS" | grep -q ',spec-reconciliation,'; then
             echo "Allowed: 'spec-reconciliation' label present."
-            echo "::warning::This PR edits the generated spec directly. Land the same change in the monorepo (eng/apps/exchange/api/openapi.json) or the next production publish will overwrite it."
+            echo "::warning::This PR edits the generated spec directly, and NOTHING will detect it afterwards — the monorepo's not-behind-public check was removed by ENG-10517, and ENG-10531's canary is not built yet. Land the same change in eng/apps/exchange/api/openapi.json (or run eng/apps/exchange/scripts/bump-api-spec.sh) or the next production publish silently overwrites it."
             exit 0
           fi
 
@@ -113,13 +189,15 @@ jobs:
             echo ""
             echo "To change the API contract:"
             echo "  1. Edit eng/apps/exchange/api/openapi.json in nexus-xyz/nexus, in the SAME"
-            echo "     PR as the implementation that serves it."
+            echo "     PR as the implementation that serves it, and bump info.version there by"
+            echo "     the rule in eng/apps/exchange/api/README.md (ENG-11154)."
             echo "  2. Merge there. The contract publishes here automatically on the next"
-            echo "     production deploy, and release-please cuts the tag."
+            echo "     production deploy, and release-please cuts the tag it names."
             echo ""
             echo "Genuinely need to correct this repo first (incident, or undoing a bad"
             echo "publish)? Add the 'spec-reconciliation' label, and land the matching change"
-            echo "in the monorepo — otherwise the next publish overwrites you."
+            echo "in the monorepo — nothing else will catch it, so the next publish overwrites"
+            echo "you."
             echo ""
             echo "Background: EDR-010 in the monorepo (product/nexus-exchange/decisions/)."
           } >&2

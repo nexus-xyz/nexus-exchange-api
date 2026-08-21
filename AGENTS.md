@@ -19,15 +19,24 @@ the published contract could document operations nothing served: five
 them.
 
 **To change the API:** edit `eng/apps/exchange/api/openapi.json` in
-`nexus-xyz/nexus`, in the same PR as the implementation. It publishes here
-automatically on the next production deploy.
+`nexus-xyz/nexus`, in the same PR as the implementation, and bump `info.version`
+there by the rule in that repo's `eng/apps/exchange/api/README.md`. It publishes
+here automatically on the next production deploy.
 
-A PR that edits `openapi.json` fails the `Spec Source of Truth` check unless it
-is the publish bot's or release-please's — the check requires a bot author, not
-just the branch name, so naming a branch after the bot does not get you past it. An edit that slipped through would be silently reverted by the next
-publish, so the check is the thing that keeps it visible. If this repo genuinely
-has to be corrected first — an incident, or undoing a bad publish — add the
-`spec-reconciliation` label and land the matching change in the monorepo.
+A PR that edits `openapi.json` here turns the `Spec Source of Truth` check red
+unless it is the publish bot's or release-please's — the check requires a bot
+author, not just the branch name, so naming a branch after the bot does not get
+you past it. **The check is visible, not a gate:** `main` has no required status
+checks, so a red guard is a signal to the CODEOWNER reviewing the PR rather than
+something that stops the merge. Closing the write path properly — restricted
+pushes, forking disabled, human PRs auto-closed — is ENG-10966.
+
+If this repo genuinely has to be corrected first — an incident, or undoing a bad
+publish — add the `spec-reconciliation` label. Then land the matching change in
+the monorepo, because nothing detects the divergence for you: the monorepo's
+`not-behind-public` check was removed in ENG-10517 and ENG-10531's canary does
+not exist yet, so an unreconciled correction is silently overwritten by the next
+publish.
 
 ## Merging
 
@@ -49,5 +58,11 @@ has to be corrected first — an incident, or undoing a bad publish — add the
 - This spec is consumed downstream by released tag. Don't remove or rename an
   operation without a version bump — downstream SDKs pin a tag and regenerate
   against it. Removals are breaking; make them deliberately, in the monorepo.
-- Changes cut a release via release-please; let it manage the version and tag.
-  Nothing else should write `info.version`, here or in the monorepo.
+- `info.version` is owned by the **monorepo**, not by this repo (ENG-11154). It
+  moves in the monorepo PR that changes the contract, by the bump rule in
+  `eng/apps/exchange/api/README.md`, together with every layer that announces it
+  — work from `.github/scripts/api-version-pins.json` there, never from a list in
+  prose, this one included.
+- In *this* repo, release-please is the only actor that should write
+  `info.version`, and it writes the number the publish commit's `Release-As:`
+  footer names rather than deriving one. Don't hand-edit the version or the tag.

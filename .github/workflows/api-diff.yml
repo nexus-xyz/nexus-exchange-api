@@ -13,6 +13,17 @@ name: API diff
 
 on:
   pull_request:
+    # `labeled`/`unlabeled` are load-bearing: step 2 above is "add the
+    # `breaking-change` label", and with only the default activity types
+    # (opened, synchronize, reopened) applying it starts no run — a manual re-run
+    # replays the original payload, labels and all, so the documented remedy
+    # could never clear the check it exists to clear (raised in review of #81).
+    # It is not a corner case: the publish bot opens a breaking publish already
+    # correctly classified as `feat!:` and deliberately does not label its own
+    # PR, so a human labelling it is the ONLY way that PR ever goes green.
+    # `unlabeled` is the other half — removing the acknowledgement must take the
+    # PR red again rather than leaving a stale green.
+    types: [opened, synchronize, reopened, labeled, unlabeled]
     paths:
       - 'openapi.json'
 
