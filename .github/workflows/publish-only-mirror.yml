@@ -1,0 +1,237 @@
+name: Publish-only mirror
+
+# This repository is a PUBLISHED COPY of `eng/apps/exchange/api/openapi.json` in
+# nexus-xyz/nexus. It is not where the contract is authored. A change belongs in
+# the monorepo, in the same PR as the implementation that serves it, and arrives
+# here on the next production deploy as a PR from the publish bot (EDR-010 /
+# ENG-5886).
+#
+# So a pull request opened here by a person is always the wrong repo, and this
+# workflow closes it with a comment saying where the change goes.
+#
+# ── Why closing is necessary, and not merely tidy ─────────────────────────────
+#
+# A change merged here is tagged by release-please and the SDKs pin published
+# tags, so an edit made in this repo reaches users without ever passing the
+# implementation, the tests, or review in the monorepo. ENG-10373 is that failure
+# already realised: five `/v1/bridge` operations published with nothing serving
+# them, and three SDKs generating dead client methods off the tag. The reverse
+# hazard is just as real — the next publish overwrites a hand-authored edit, so it
+# merges, passes CI, cuts a release, and then silently disappears.
+#
+# ── Why this workflow, rather than a repository setting ───────────────────────
+#
+# ENG-10966 scoped "disable forking" as the way to close the external path.
+# GitHub does not offer that: the forking policy applies to private and internal
+# repositories only, and forking a PUBLIC repository cannot be turned off. So
+# there is no setting that stops an external fork PR from being opened, and this
+# workflow is the only thing that closes it. That is why it triggers on
+# `pull_request_target` (see below) rather than `pull_request`, which would hand a
+# fork event a read-only token and be unable to close anything.
+#
+# The `main` ruleset already blocks the OTHER half — its `pull_request` rule means
+# no one pushes to `main` directly, and one CODEOWNER approval gates every merge.
+# (ENG-10966 was filed believing neither was true; that reading came from
+# `repos/.../branches/main/protection`, which is rulesets-unaware. The ruleset is
+# real. Its one remaining gap is the admin repository role sitting in
+# `bypass_actors` with `bypass_mode: pull_request`, so a repo admin can merge
+# without the approval — a settings change, not something a workflow can fix.)
+# What the ruleset cannot do is stop a PR being OPENED, and the habit of opening
+# one is the actual failure mode this catches. It catches us, not just externals.
+#
+# ── Who is allowed to write, and how that is decided ─────────────────────────
+#
+# Anything whose PR author is a Bot is left alone: the monorepo publish bot on
+# `bot/publish-served-spec`, release-please on `release-please--branches--main`,
+# and dependabot, which is configured in this repo (`.github/dependabot.yml`) and
+# is the only thing that keeps the action pins in these workflows current.
+#
+# Deliberately a TYPE check, not a login allowlist. The publish job has never run
+# (ENG-10325 — the runner GitHub App is not yet installed here), so nothing has
+# demonstrated the login its app token opens PRs under, and reading it from the
+# installation needs `admin:org`. Guessing it and getting it wrong would auto-close
+# the first bot publish: a self-inflicted outage of the only write path this repo
+# is supposed to accept. `user.type == 'Bot'` needs no guess and cannot be forged
+# — an app-authored PR is the only way to get that value, a person cannot set it,
+# and putting an app in a position to author a PR here means installing it on the
+# organisation, which is org-admin territory. This is the same reasoning the Spec
+# Source of Truth guard uses for its machine arms.
+#
+# Pinning the two logins once ENG-10325 has been observed would narrow this
+# further — it would stop an unrelated installed app from writing. It is a
+# tightening, not a correctness fix, and it is not worth taking the lockout risk
+# before the login is known.
+#
+# ── Escape hatches, because this repo still has to be maintainable ───────────
+#
+# The workflows, docs and templates in this repository have no other home — they
+# are not generated from the monorepo — so a blanket close-everything rule would
+# brick its own maintenance, including any fix to this file. Two ways out:
+#
+#   1. the `repo-maintenance` label, for a PR that is genuinely repo-local (CI,
+#      docs, templates, this workflow). Add it when you open the PR
+#      (`gh pr create --label repo-maintenance`) and it is never closed; add it
+#      afterwards and reopening the PR keeps it open. It is a label rather than an
+#      exemption for maintainers so it leaves a mark, and because an outside
+#      contributor cannot apply one.
+#   2. the `spec-reconciliation` label, for the case where the generated spec
+#      genuinely has to be corrected here ahead of the monorepo — an incident, or
+#      undoing a bad publish. Same label the Spec Source of Truth guard honours,
+#      and the same obligation: land the matching change in the monorepo or the
+#      next publish overwrites you.
+#
+# If this workflow ever misfires in a way a label cannot get around, disable it
+# from the Actions tab (Actions → Publish-only mirror → ⋯ → Disable workflow).
+# That needs no PR, which matters precisely because the PR would be closed by the
+# thing being fixed.
+#
+# ── What it reaches, and what it does not ────────────────────────────────────
+#
+# `pull_request_target` runs in the BASE repository's context: the token can write
+# even for a fork PR, and the workflow definition is resolved from `main` rather
+# than from the PR head. So a PR cannot disable its own closure by editing this
+# file — unlike a `pull_request` workflow, which is head-resolved and judges
+# itself. Nothing here checks out or executes PR content, and every value taken
+# from the event is passed through `env:` rather than interpolated into a shell
+# line, so the usual `pull_request_target` hazard does not apply. (The Spec Source
+# of Truth guard stays on `pull_request` for the opposite reason: it is a status
+# check, and a base-resolved run reports against the wrong ref.)
+#
+# Only `opened` and `reopened`, NOT `synchronize`: pushing to a pull request that
+# was already open when this landed must not close it out from under its author.
+# Drafts are covered — `opened` fires for a draft too — with one transitional
+# gap: a PR that is ALREADY a draft is not caught until it is reopened.
+#
+# It also does not fire on release-please's own PRs, for the same reason no other
+# `pull_request` workflow here does (ENG-8866): release-please cuts them with the
+# default `GITHUB_TOKEN`, and GitHub starts no workflow runs from events created
+# by that token. The Bot arm above is therefore belt-and-braces for that actor —
+# it fails open today, and starts doing real work if release-please is ever handed
+# an app token.
+#
+# Closing is reversible and loses nothing: the branch, the commits and the
+# discussion all survive, and a maintainer can reopen with a label. That is the
+# point of closing rather than blocking — an author who is in the wrong repo needs
+# to be told where to go, not handed a red check.
+
+on:
+  pull_request_target:
+    types: [opened, reopened]
+
+# Least privilege: enough to comment and close, nothing else. Note that
+# `pull_request_target` would otherwise hand this job a broad write token.
+permissions:
+  contents: read
+  pull-requests: write
+
+# Serialise per PR: a rapid close/reopen can otherwise put two runs on the same
+# PR at once. Deliberately NOT `cancel-in-progress` — this job mutates, and
+# cancelling one mid-flight could leave a PR commented but not closed. Queueing is
+# safe because the comment is deduplicated and closing twice is a no-op.
+concurrency:
+  group: publish-only-mirror-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  close:
+    name: Human PRs belong in the monorepo
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close unless the author is a bot or the PR is labelled
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          # Via env, never interpolated into the script below: a PR field is
+          # attacker-controlled text and `pull_request_target` runs with a write
+          # token. `login` is constrained by GitHub, but the habit is the point.
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          # "Bot" for an app-authored PR; a person is "User".
+          AUTHOR_TYPE: ${{ github.event.pull_request.user.type }}
+        run: |
+          set -euo pipefail
+
+          if [ "$AUTHOR_TYPE" = "Bot" ]; then
+            echo "Allowed: ${AUTHOR} is a bot (publish bot, release-please or dependabot)."
+            exit 0
+          fi
+
+          # Read the labels from the API rather than from the event payload. A
+          # label applied in the same breath as the PR (`gh pr create --label`,
+          # or the UI sidebar) can land just after the `opened` payload is cut,
+          # and trusting the payload would close a PR that was correctly
+          # labelled. On a lookup error, stop and go red rather than guessing:
+          # "cannot tell" must never collapse into "not labelled". Erring toward
+          # leaving the PR open is the right way round — a missed close is loud
+          # (a red run on an open PR someone has to look at), whereas closing a
+          # correctly-labelled PR is a wrong action taken silently.
+          if ! labels="$(gh pr view "$PR" --repo "$REPO" --json labels --jq '[.labels[].name] | join(",")')"; then
+            echo "::error::Could not read this PR's labels, so whether it is exempt is unknown. Leaving the PR open — close it by hand if it is a spec edit." >&2
+            exit 1
+          fi
+          echo "Author: ${AUTHOR} (${AUTHOR_TYPE}); labels: ${labels:-<none>}"
+
+          for exempt in repo-maintenance spec-reconciliation; do
+            if printf ',%s,' "$labels" | grep -q ",${exempt},"; then
+              echo "Allowed: '${exempt}' label present."
+              if [ "$exempt" = spec-reconciliation ]; then
+                echo "::warning::This PR edits the generated spec directly. Land the same change in eng/apps/exchange/api/openapi.json in nexus-xyz/nexus, or the next production publish silently overwrites it."
+              fi
+              exit 0
+            fi
+          done
+
+          # Don't repeat the comment. A close/reopen cycle is the normal way to
+          # use the label escape hatch, and restating the wall of text each time
+          # is noise. The marker is an HTML comment: invisible in the rendered
+          # comment, greppable here.
+          #
+          # Collect the bodies BEFORE grepping rather than piping into `grep -q`.
+          # Under `pipefail`, `grep -q` exits as soon as it matches, `gh` dies of
+          # SIGPIPE, and the pipeline reports failure on the very path where the
+          # marker was found — which would make it comment every time.
+          marker='<!-- publish-only-mirror -->'
+          existing="$(gh api --paginate "repos/${REPO}/issues/${PR}/comments" --jq '.[].body' || true)"
+          if printf '%s' "$existing" | grep -qF "$marker"; then
+            echo "Already commented on this PR; closing without repeating it."
+          else
+            cat > "${RUNNER_TEMP}/comment.md" <<'COMMENT'
+          <!-- publish-only-mirror -->
+          ### Closing this — the change belongs in `nexus-xyz/nexus`
+
+          Thanks for taking the time. This repository is a **published copy** of the
+          Nexus Exchange API contract, not the place it is authored, so a pull request
+          here cannot be merged.
+
+          `openapi.json` is generated from **`eng/apps/exchange/api/openapi.json`** in
+          `nexus-xyz/nexus`, and published here automatically after a production deploy
+          so that it describes what the exchange is actually serving. An edit made in
+          this repository is overwritten by the next publish — it would merge, pass CI,
+          cut a release, and then silently disappear.
+
+          **If you are outside the Nexus team:** please [open an
+          issue](https://github.com/nexus-xyz/nexus-exchange-api/issues/new/choose)
+          instead. That is the right entry point, not a second-class one — the fix lands
+          at the source and reaches you in the next published release. Spec inaccuracies
+          and API change proposals each have a template.
+
+          **If you are on the Nexus team:** make the change in the monorepo, in the same
+          PR as the implementation that serves it, and bump `info.version` there by the
+          rule in `eng/apps/exchange/api/README.md`.
+
+          Genuinely need a pull request *here*? Two labels cover it, and reopening the PR
+          after you add one keeps it open:
+
+          - `repo-maintenance` — the PR is repo-local: CI, docs, templates.
+          - `spec-reconciliation` — this repo has to be corrected ahead of the monorepo
+            (an incident, or undoing a bad publish). Land the matching monorepo change
+            too, or the next publish overwrites it.
+
+          Background: EDR-010, and `CONTRIBUTING.md` in this repository.
+          COMMENT
+            gh pr comment "$PR" --repo "$REPO" --body-file "${RUNNER_TEMP}/comment.md" >/dev/null
+            echo "Commented."
+          fi
+
+          gh pr close "$PR" --repo "$REPO"
+          echo "::notice::Closed PR #${PR} by ${AUTHOR}. This repository only accepts the publish bot's writes; the change belongs in eng/apps/exchange/api/openapi.json in nexus-xyz/nexus."

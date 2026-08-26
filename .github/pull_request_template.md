@@ -1,42 +1,22 @@
 <!--
-Thanks for contributing to the Nexus Exchange API spec!
-Keep PRs focused; open separate PRs for unrelated changes.
-See CONTRIBUTING.md for the full workflow.
+This template is deliberately one paragraph. If you are looking for the old
+checklist, it moved to the monorepo along with the spec — see EDR-010 and
+CONTRIBUTING.md.
 -->
 
-## Summary
+## Please close this PR
 
-<!-- What does this PR change in openapi.json, and why? Link the motivating issue. -->
-
-Closes #
-
-## Changes
-
-<!-- Bullet the notable spec changes. Name new/removed/renamed operations and fields. -->
-
--
-
-## Version impact
-
-<!-- release-please derives the bump from your conventional-commit title. Check one. -->
-
-- [ ] **Additive / fix** — new optional field, new endpoint, or compatible
-      fix. Use a `feat:` or `fix:` title (patch bump).
-- [ ] **Breaking** — removed endpoint, renamed field, new required parameter,
-      or type change. Use a `feat!:` title (or a `BREAKING CHANGE:` footer) for
-      a minor bump, **and** add the `breaking-change` label so the API diff
-      check unblocks.
-
-## Checklist
-
-- [ ] PR title is a conventional commit (`feat:` / `fix:` / `feat!:` / `docs:`).
-- [ ] `npx -y @redocly/cli@2 lint openapi.json` passes locally (the Spec Lint check).
-- [ ] Reviewed the `oasdiff` classification (the API diff check) and the version
-      impact above is correct.
-- [ ] `CHANGELOG.md` and `$.info.version` left untouched — release-please owns them.
-- [ ] Considered the downstream SDK ripple (`-rs` / `-py` / `-mcp` pin to spec
-      releases); breaking changes were minimized and batched.
-
-## Notes for reviewers
-
-<!-- Anything reviewers should focus on, risks, or coordination needed. -->
+**This repository does not accept pull requests.** `openapi.json` here is a
+published copy of `eng/apps/exchange/api/openapi.json` in `nexus-xyz/nexus`,
+republished automatically after every production deploy — so an edit made here is
+overwritten by the next publish, and would merge, pass CI, cut a release the SDKs
+pin, and then silently disappear. If you are outside the Nexus team, please
+[open an issue](https://github.com/nexus-xyz/nexus-exchange-api/issues/new/choose)
+instead; the fix lands at the source and reaches you in the next release. If you
+are on the Nexus team, make the change in the monorepo, in the same PR as the
+implementation that serves it. A human-authored PR opened here is closed
+automatically with a comment saying the same thing. Two exceptions, both by
+label: `repo-maintenance` for a genuinely repo-local change (CI, docs, these
+templates) and `spec-reconciliation` for correcting this repo ahead of the
+monorepo during an incident — add the label when you open the PR
+(`gh pr create --label repo-maintenance`) and it stays open.

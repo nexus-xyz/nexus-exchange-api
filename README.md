@@ -254,6 +254,19 @@ poll. Ceilings are per-deployment configuration, not contract.
 
 32 perpetual futures markets including BTC, ETH, SOL, and traditional assets (GOLD, SPX, NDQ, EUR, GBP, JPY). Full list: `GET /markets/summary`.
 
+## Found something wrong? Open an issue, not a PR
+
+`openapi.json` here is a **published copy**. It is generated from
+`eng/apps/exchange/api/openapi.json` in the Nexus monorepo and republished after
+every production deploy, so it describes what the exchange is actually serving. An
+edit made in this repository is overwritten by the next publish, so pull requests
+against it are closed automatically — including ours.
+
+[Open an issue](https://github.com/nexus-xyz/nexus-exchange-api/issues/new/choose)
+instead: a spec inaccuracy or an API change proposal. We fix it at the source and
+it reaches you in the next published release. See
+[CONTRIBUTING.md](./CONTRIBUTING.md) for the detail.
+
 ## License
 
 Dual-licensed under [MIT](./LICENSE-MIT) or [Apache-2.0](./LICENSE-APACHE), at

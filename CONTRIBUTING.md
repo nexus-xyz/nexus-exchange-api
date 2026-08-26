@@ -1,13 +1,51 @@
 # Contributing to the Nexus Exchange API spec
 
-This repository is the **source of truth** for the Nexus Exchange API. The
-artifact is [`openapi.json`](./openapi.json) — a single OpenAPI 3 document
-describing every REST and WebSocket endpoint. There is no SDK or runnable code
-here; the spec itself is what we ship, validated by CI and released as a
-versioned, downloadable asset.
+This repository **publishes** the Nexus Exchange API contract. The artifact is
+[`openapi.json`](./openapi.json) — a single OpenAPI 3 document describing every
+REST and WebSocket endpoint. There is no SDK or runnable code here; the spec
+itself is what we ship, validated by CI and released as a versioned, downloadable
+asset that the SDKs pin.
 
-If you found an inaccuracy or want to propose a change, thank you — this guide
-explains how.
+> ### This repository does not accept pull requests
+>
+> `openapi.json` is **generated**. Its source of truth is the Nexus monorepo, at
+> `eng/apps/exchange/api/openapi.json`, and it arrives here as a bot PR after
+> every production deploy — so the published spec describes endpoints that exist
+> and are live, rather than endpoints that are planned. That direction reversed in
+> ENG-5886 (EDR-010); this repo used to be canonical, with the monorepo vendoring
+> a released tag from it.
+>
+> So an edit made **here** is overwritten by the next publish. It would merge,
+> pass CI, cut a release the SDKs pin, and then silently disappear. Worse, it
+> reaches users without ever passing the implementation, the tests, or review in
+> the monorepo: that is ENG-10373, five `/v1/bridge` operations published with
+> nothing serving them and three SDKs generating dead client methods off the tag.
+>
+> **If you are outside the Nexus team:** [open an
+> issue](https://github.com/nexus-xyz/nexus-exchange-api/issues/new/choose). That
+> is the right entry point, not a second-class one — we fix the spec at the source
+> and it reaches you in the next published release. You cannot land a spec change
+> here directly any more.
+>
+> **If you are on the Nexus team:** the change goes in the monorepo, in the same
+> PR as the implementation that serves it.
+>
+> A human-authored PR opened here is **closed automatically** by the
+> `Publish-only mirror` workflow, with a comment saying where the change belongs.
+> Two labels are exempt, and adding one when you open the PR
+> (`gh pr create --label repo-maintenance`) keeps it open:
+>
+> | Label | For |
+> |---|---|
+> | `repo-maintenance` | A genuinely repo-local change: CI, docs, templates. Those have no other home — they are not generated from the monorepo. |
+> | `spec-reconciliation` | Correcting the generated spec here *ahead* of the monorepo — an incident, or undoing a bad publish. Land the matching monorepo change too, or the next publish overwrites you. |
+>
+> Note what the close is *not*: a judgement on the change. It is a redirect, and
+> nothing is lost — the branch, the commits and the discussion all survive, and a
+> maintainer can reopen with a label.
+
+This guide covers where a change goes, plus the versioning rules that still
+govern every release.
 
 ## What lives here
 
@@ -19,38 +57,63 @@ explains how.
 
 ## Proposing a change
 
-### 1. Edit `openapi.json`
+### 1. Make the change in the monorepo, not here
 
-Make your change directly in `openapi.json`. Keep it valid OpenAPI 3 and make
-sure every operation has a unique `operationId` — code generators downstream
-depend on those being present and stable.
+Edit `eng/apps/exchange/api/openapi.json` in `nexus-xyz/nexus`, **in the same PR
+as the implementation that serves it**. Keep it valid OpenAPI 3 and make sure
+every operation has a unique `operationId` — code generators downstream depend on
+those being present and stable.
+
+The contract then arrives here on the next production deploy, as a PR from the
+publish bot. Nothing needs doing in this repository.
+
+**Outside contributors:** open an issue describing the inaccuracy or the proposal,
+as above.
 
 ### 2. Validate locally
+
+These are the same checks CI runs here, but you now run them **in your monorepo
+working copy**. The commands below spell the path out so a copy-paste does not
+silently lint the published copy in this repo instead.
 
 CI runs [Redocly](https://redocly.com/docs/cli/) to lock in structural
 validity and the `operationId` guarantees. Run the exact same check before you
 push:
 
 ```bash
-npx -y @redocly/cli@2 lint openapi.json
+# from the root of your nexus-xyz/nexus checkout
+npx -y @redocly/cli@2 lint eng/apps/exchange/api/openapi.json
 ```
 
-To preview how your change classifies against `main` — additive versus
-breaking — run [`oasdiff`](https://github.com/oasdiff/oasdiff) the same way CI
-does:
+To preview how your change classifies — additive versus breaking — run
+[`oasdiff`](https://github.com/oasdiff/oasdiff) the same way CI does. Compare
+against the **published** spec, because that is the baseline the classification is
+made from:
 
 ```bash
-# Save the current main spec, then compare your working copy against it.
-git show origin/main:openapi.json > /tmp/base.json
+# from the root of your nexus-xyz/nexus checkout
+SPEC=eng/apps/exchange/api/openapi.json
+
+# The currently-published spec, fetched from this repo's default branch.
+curl -fsSL -o /tmp/base.json \
+  https://raw.githubusercontent.com/nexus-xyz/nexus-exchange-api/main/openapi.json
 
 # Human-readable summary of every change.
-oasdiff changelog /tmp/base.json openapi.json
+oasdiff changelog /tmp/base.json "$SPEC"
 
-# Breaking changes only (this is the gate CI enforces).
-oasdiff breaking /tmp/base.json openapi.json --fail-on ERR
+# Breaking changes only (this is the gate CI enforces here).
+oasdiff breaking /tmp/base.json "$SPEC" --fail-on ERR
 ```
 
+One thing this preview does *not* tell you: the published baseline lags the
+monorepo's `main` by every merged spec change that has not been deployed yet, so
+it answers "how will the next publish classify" rather than "does my PR pass".
+
 ### 3. Write conventional-commit PRs
+
+This governs every PR that actually lands here — the publish bot's, and a
+labelled `repo-maintenance` one. Your monorepo PR follows the monorepo's own
+conventions; the bot classifies the publish from the diff.
 
 Versioning and the changelog are fully automated by
 [release-please](https://github.com/googleapis/release-please) — the
