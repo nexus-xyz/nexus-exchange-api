@@ -1,6 +1,9 @@
 version: 2
 updates:
-  # GitHub Actions used by our workflows (spec-lint, api-diff, release-please).
+  # GitHub Actions pinned by anything under `.github/workflows/`. Deliberately not
+  # a list of which workflows those are: the set has changed twice (ENG-5886 added
+  # `spec-source-of-truth.yml`, ENG-10966 `publish-only-mirror.yml`) and a comment
+  # enumerating them is stale the next time one lands.
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
@@ -8,6 +11,14 @@ updates:
     open-pull-requests-limit: 10
     commit-message:
       prefix: "ci"
+    # Belt-and-braces against `publish-only-mirror.yml`. That workflow exempts any
+    # PR whose author is a Bot, which covers dependabot today — but ENG-10966 plans
+    # to narrow both bot arms to specific logins once the publish app's identity has
+    # been observed, and a list naming only the publish app would start auto-closing
+    # the one thing that keeps these action pins current. The label is the second,
+    # login-independent exemption, so that tightening cannot silently break updates.
+    labels:
+      - repo-maintenance
     groups:
       # Collapse routine patch/minor bumps into one PR to cut review noise;
       # majors still open individually so breaking changes get scrutiny.

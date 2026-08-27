@@ -72,16 +72,20 @@ name: Spec Source of Truth
 # deliver `pull_request` events. The guard is therefore visible on the one PR
 # class that can actually rewrite the whole contract.
 #
-# A `spec-reconciliation` edit HAS NO AUTOMATIC BACKSTOP, and the label's warning
-# says so. An earlier revision of this comment claimed the monorepo's
-# `not-behind-public` check would independently flag the divergence; ENG-10517
-# deleted that check, because requiring equality with the published spec made
-# every monorepo PR hostage to deploy cadence. `eng-exchange-api-vendored-check.yml`
-# now states outright that detecting an edit made directly in this repo "has no
-# home", and ENG-10531 is the canary for it, deliberately off the PR path. So the
-# label is an obligation on the person applying it: land the matching change in
-# the monorepo (`eng/apps/exchange/scripts/bump-api-spec.sh` pulls this file
-# back), or the next production publish silently overwrites the correction.
+# A `spec-reconciliation` edit HAS NO AUTOMATIC BACKSTOP ON THE MONOREPO SIDE, and
+# the label's warning says so. An earlier revision of this comment claimed the
+# monorepo's `not-behind-public` check would independently flag the divergence.
+# ENG-10517 stopped every monorepo gate from reading this repo — comparing against
+# a publication target that lags `main` by each undeployed spec change let deploy
+# cadence decide a PR's fate — and ENG-9600 then deleted the workflow that carried
+# it, `eng-exchange-api-vendored-check.yml`, outright. Do not go looking for that
+# file: the live statement is in `eng/apps/exchange/api/README.md`, under "CI that
+# guards this", and ENG-10531 tracks the canary, deliberately off the PR path.
+#
+# So the label is an obligation on the person applying it: land the matching change
+# in the monorepo (`eng/apps/exchange/scripts/bump-api-spec.sh vX.Y.Z` pulls this
+# file back, and refuses to commit, because which side is right is a human's call),
+# or the next production publish silently overwrites the correction.
 #
 # This workflow cannot make itself tamper-proof. `pull_request` resolves the
 # workflow from the PR's HEAD, so a PR that edits the trigger below is judged by

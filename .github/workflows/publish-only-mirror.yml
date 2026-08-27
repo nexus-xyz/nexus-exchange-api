@@ -62,6 +62,14 @@ name: Publish-only mirror
 # tightening, not a correctness fix, and it is not worth taking the lockout risk
 # before the login is known.
 #
+# WHOEVER DOES THAT PINNING: there is a third bot here, and it is not one of the
+# two. dependabot opens the PRs that keep the action pins in these workflows
+# current, and an allowlist naming only the publish app and release-please would
+# close them — silently, since nobody watches for a dependabot PR that failed to
+# arrive. `.github/dependabot.yml` therefore also applies `repo-maintenance` to
+# its own PRs, so they stay exempt by label whatever happens to the author arms.
+# Keep that label, or add dependabot to the allowlist.
+#
 # ── Escape hatches, because this repo still has to be maintainable ───────────
 #
 # The workflows, docs and templates in this repository have no other home — they

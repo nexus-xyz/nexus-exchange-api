@@ -101,9 +101,12 @@ machine-readable.
 
 Three gates there enforce all of this, so none of it is a convention you have to
 remember: the `Exchange API Spec` required check fails a route change with no spec
-change **and** a bump that does not follow the rule, `API version pins are
-registered and in sync` fails a version layer left behind, and the indexer's
-conformance test fails a documented operation that no route serves.
+change **and** a bump that does not follow the rule; the `Governance gates`
+required check fails a version layer left behind, in its step *"Every pin is
+registered, and every registered pin matches the spec"*; and the indexer's
+route-coverage tests (`openapi_route_coverage.rs`, `engine_route_coverage.rs`)
+fail a documented operation that no route serves, and a served route the contract
+does not document.
 
 The contract then arrives here on the next production deploy, as a PR from the
 publish bot. Nothing needs doing in this repo.
@@ -162,7 +165,7 @@ ERR` run is not evidence that MINOR is the right bump; and the published baselin
 lags `main` by every merged spec change that has not been deployed, so it answers
 "how will the next publish classify" rather than "does my PR pass". The
 authoritative gates are the `Exchange API Spec` required check and the indexer's
-conformance test, both there, on your PR's own revision.
+route-coverage tests, both there, on your PR's own revision.
 
 ### 3. Write conventional-commit PRs
 
