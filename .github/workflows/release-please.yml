@@ -1,13 +1,39 @@
 name: release-please
 
-# This repo is the source of truth for the Nexus Exchange API spec.
+# This repo PUBLISHES the Nexus Exchange API spec; it does not author it. The
+# source of truth is the Nexus monorepo, at `eng/apps/exchange/api/openapi.json`
+# (ENG-5886 / EDR-010, which superseded EDR-001 — this repo used to be canonical
+# and the monorepo vendored a released tag from it). `openapi.json` arrives here
+# as a PR from the monorepo publish bot after a production deploy, and this
+# workflow turns those merged commits into the tag the SDKs pin. See
+# CONTRIBUTING.md, and `spec-source-of-truth.yml` for the guard.
 #
-# Spec PRs land on main WITHOUT bumping the version — the conventional commit
-# type carries the intent (feat: / fix: -> patch, feat! or BREAKING CHANGE
-# -> minor, pre-1.0). release-please accumulates them into a running release
-# PR. Merging that release PR is the deliberate, batched release: it bumps
-# openapi.json's info.version, updates CHANGELOG.md, tags vX.Y.Z, cuts a
-# GitHub Release, and attaches openapi.json as a release asset.
+# WHO OWNS THE VERSION NUMBER. Not this workflow — the monorepo does, since
+# ENG-11154. `info.version` moves in the monorepo PR that changes the contract,
+# by the bump rule in `eng/apps/exchange/api/README.md`, and every layer that
+# announces the version moves with it there. So a publish PR ARRIVES here with
+# info.version already bumped, and its commit carries a `Release-As: X.Y.Z`
+# footer naming that same number. release-please obeys the footer rather than
+# deriving its own answer, which is the point: two actors computing a version
+# from the same diff is exactly the divergence the rule exists to stop.
+#
+# An earlier revision of this comment said the opposite — that release-please
+# owned the number and the bot pinned info.version to the published value to keep
+# it out of the diff. That was true before ENG-11154 and is not now (raised in
+# review of #81); reading it that way in the monorepo fails the required
+# `Exchange API Spec` bump-rule check there.
+#
+# What release-please still owns is the RELEASE: it accumulates merged commits
+# into a running release PR, and merging that PR is the deliberate, batched
+# release — it reconciles openapi.json's info.version via `extra-files` (usually
+# a no-op now, since the publish already carried the number), updates
+# CHANGELOG.md, tags vX.Y.Z, cuts a GitHub Release, attaches openapi.json as a
+# release asset, and fans out to the SDKs below.
+#
+# The conventional commit type still decides WHETHER a release is cut and what
+# the changelog says (feat: / fix: -> patch, feat! or BREAKING CHANGE -> minor,
+# pre-1.0). For a repo-local PR that touches no spec — docs, CI — there is no
+# `Release-As:` footer and release-please derives the number as it always did.
 
 on:
   push:

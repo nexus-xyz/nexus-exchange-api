@@ -8,18 +8,26 @@ asset that the SDKs pin.
 
 > ### This repository does not accept pull requests
 >
-> `openapi.json` is **generated**. Its source of truth is the Nexus monorepo, at
-> `eng/apps/exchange/api/openapi.json`, and it arrives here as a bot PR after
-> every production deploy — so the published spec describes endpoints that exist
-> and are live, rather than endpoints that are planned. That direction reversed in
-> ENG-5886 (EDR-010); this repo used to be canonical, with the monorepo vendoring
-> a released tag from it.
+> **`openapi.json` is generated. Its source of truth is the Nexus monorepo, at
+> `eng/apps/exchange/api/openapi.json`.**
 >
-> So an edit made **here** is overwritten by the next publish. It would merge,
-> pass CI, cut a release the SDKs pin, and then silently disappear. Worse, it
-> reaches users without ever passing the implementation, the tests, or review in
-> the monorepo: that is ENG-10373, five `/v1/bridge` operations published with
-> nothing serving them and three SDKs generating dead client methods off the tag.
+> The monorepo publishes the contract that a production deploy is *actually
+> serving*, and release-please here cuts the tag the SDKs pin. So the spec in this
+> repo describes endpoints that exist and are live, rather than endpoints that are
+> planned.
+>
+> That direction reversed in ENG-5886 (EDR-010). This repo used to be canonical,
+> with the monorepo vendoring a released tag from it. The cost of that shape: the
+> spec was published and externally visible while the implementation was still in
+> review, shipping one route took four coordinated steps across two repos, and the
+> published contract could document operations nothing served — ENG-10373, five
+> `/v1/bridge` operations sitting here for four weeks with no implementation behind
+> them, and three SDKs generating dead client methods off the tag.
+>
+> So an edit made **here** is overwritten by the next publish. It would merge, pass
+> CI, cut a release the SDKs pin, and then silently disappear — and it would reach
+> users without ever passing the implementation, the tests, or review in the
+> monorepo.
 >
 > **If you are outside the Nexus team:** [open an
 > issue](https://github.com/nexus-xyz/nexus-exchange-api/issues/new/choose). That
@@ -39,6 +47,20 @@ asset that the SDKs pin.
 > |---|---|
 > | `repo-maintenance` | A genuinely repo-local change: CI, docs, templates. Those have no other home — they are not generated from the monorepo. |
 > | `spec-reconciliation` | Correcting the generated spec here *ahead* of the monorepo — an incident, or undoing a bad publish. Land the matching monorepo change too, or the next publish overwrites you. |
+>
+> A PR that stays open on a label and still edits `openapi.json` meets the second
+> guard: the `Spec Source of Truth` check goes red unless the PR comes from the
+> publish bot or release-please — it requires a bot author as well as the branch
+> name, so naming a branch after the bot does not get a human past it.
+>
+> **That check is visible; it does not by itself prevent anything.** `main` carries
+> no required status checks, so the guard is a red signal to the CODEOWNER whose
+> approval *is* the gate. It also cannot be made required as things stand:
+> release-please's own PRs are opened with the default `GITHUB_TOKEN`, which starts
+> no workflow runs, so a required check would never report on them and every
+> release PR would block forever. The automatic close is the enforcing half — and
+> on the external path it is the only enforcement there can be, because forking
+> cannot be disabled on a public repository.
 >
 > Note what the close is *not*: a judgement on the change. It is a redirect, and
 > nothing is lost — the branch, the commits and the discussion all survive, and a
@@ -64,17 +86,38 @@ as the implementation that serves it**. Keep it valid OpenAPI 3 and make sure
 every operation has a unique `operationId` — code generators downstream depend on
 those being present and stable.
 
-The contract then arrives here on the next production deploy, as a PR from the
-publish bot. Nothing needs doing in this repository.
+**Bump `info.version` in that same PR**, by the rule in the monorepo's
+`eng/apps/exchange/api/README.md` (ENG-11154): `0.MAJOR.MINOR`, non-breaking
+moves MINOR, breaking moves MAJOR and resets MINOR — unless the monorepo's MAJOR
+already leads the latest published tag here, in which case breaking moves MINOR
+too, because the release that eventually ships carries one MAJOR bump for the
+whole undeployed batch. "Breaking" there is anything `oasdiff` flags at **warning
+level or above**, which is wider than the error-level bar the CI gate in this repo
+uses. Every layer in the monorepo that announces the version moves with it; work
+from `.github/scripts/api-version-pins.json` and
+`python3 .github/scripts/api_version_pins_check.py`, never from a list in prose —
+a prose list there went stale exactly once and that is why the inventory is
+machine-readable.
 
-**Outside contributors:** open an issue describing the inaccuracy or the proposal,
-as above.
+Three gates there enforce all of this, so none of it is a convention you have to
+remember: the `Exchange API Spec` required check fails a route change with no spec
+change **and** a bump that does not follow the rule, `API version pins are
+registered and in sync` fails a version layer left behind, and the indexer's
+conformance test fails a documented operation that no route serves.
+
+The contract then arrives here on the next production deploy, as a PR from the
+publish bot. Nothing needs doing in this repo.
+
+**Outside contributors:** open an issue describing the inaccuracy. You cannot land
+a spec change here directly any more — but the issue is the right entry point and
+we will make the change at the source.
 
 ### 2. Validate locally
 
 These are the same checks CI runs here, but you now run them **in your monorepo
-working copy**. The commands below spell the path out so a copy-paste does not
-silently lint the published copy in this repo instead.
+working copy**, against `eng/apps/exchange/api/openapi.json`. The commands below
+spell that path out so a copy-paste does not silently lint the published copy in
+this repo instead.
 
 CI runs [Redocly](https://redocly.com/docs/cli/) to lock in structural
 validity and the `operationId` guarantees. Run the exact same check before you
@@ -87,8 +130,16 @@ npx -y @redocly/cli@2 lint eng/apps/exchange/api/openapi.json
 
 To preview how your change classifies — additive versus breaking — run
 [`oasdiff`](https://github.com/oasdiff/oasdiff) the same way CI does. Compare
-against the **published** spec, because that is the baseline the classification is
-made from:
+against the **published** spec, because that is the baseline the classification
+is made from: the publish bot diffs the served contract against this repo's
+`openapi.json` to pick its commit prefix.
+
+Diff the files **as they are**. An earlier version of this section normalised
+`info.version` out of the comparison, on the premise that release-please owned
+the number and the bot kept it out of the diff; since ENG-11154 neither is true —
+the version moves in your monorepo PR, the publish bot compares the whole
+document, and `info.version` is the one field the monorepo's required bump-size
+rule reads.
 
 ```bash
 # from the root of your nexus-xyz/nexus checkout
@@ -101,13 +152,17 @@ curl -fsSL -o /tmp/base.json \
 # Human-readable summary of every change.
 oasdiff changelog /tmp/base.json "$SPEC"
 
-# Breaking changes only (this is the gate CI enforces here).
+# Breaking changes only (this is the gate CI enforces here, at ERR).
 oasdiff breaking /tmp/base.json "$SPEC" --fail-on ERR
 ```
 
-One thing this preview does *not* tell you: the published baseline lags the
-monorepo's `main` by every merged spec change that has not been deployed yet, so
-it answers "how will the next publish classify" rather than "does my PR pass".
+Two things this preview does *not* tell you, both enforced in the monorepo: the
+bump rule reads `oasdiff` at **warning** level and above, so a clean `--fail-on
+ERR` run is not evidence that MINOR is the right bump; and the published baseline
+lags `main` by every merged spec change that has not been deployed, so it answers
+"how will the next publish classify" rather than "does my PR pass". The
+authoritative gates are the `Exchange API Spec` required check and the indexer's
+conformance test, both there, on your PR's own revision.
 
 ### 3. Write conventional-commit PRs
 
@@ -137,11 +192,21 @@ commit's body is assembled from the commit messages on the branch, never from
 the PR description, so a `BREAKING CHANGE:` footer written only in the PR
 description is dropped at merge and the break ships as a patch.
 
-You do **not** edit the version yourself. Spec PRs land on `main` without a
-version bump; release-please accumulates merged commits into a running release
-PR. Merging that release PR is the deliberate, batched release — it bumps
-`$.info.version` inside `openapi.json`, updates `CHANGELOG.md`, tags `vX.Y.Z`,
-cuts a GitHub Release, and attaches `openapi.json` as a release asset.
+You do **not** edit the version in this repo. Note where the number comes from,
+because it moved in ENG-11154: the monorepo PR that changes the contract bumps
+`info.version` by the rule above, and the publish commit carries a
+`Release-As: X.Y.Z` footer naming it, so release-please cuts exactly that tag
+instead of deriving one. Two actors computing a version from the same diff is the
+divergence the rule exists to prevent. A publish PR therefore *does* move
+`info.version` — that is expected, not a bot overstepping.
+
+The commit type still decides **whether** a release is cut and what the changelog
+says, and for a PR here that touches no spec (docs, CI) there is no `Release-As:`
+footer and release-please derives the number from the table above as it always
+did. Merging the release PR is still the deliberate, batched release — it
+reconciles `$.info.version` inside `openapi.json` (usually a no-op now, the
+publish having carried the number), updates `CHANGELOG.md`, tags `vX.Y.Z`, cuts a
+GitHub Release, and attaches `openapi.json` as a release asset.
 
 Squash-and-merge is the only method enabled here, and the source branch is
 deleted on merge — so one PR is always one commit on `main`, which is what makes
@@ -185,6 +250,22 @@ deliberately:
 2. Add the `breaking-change` label to the PR to acknowledge and unblock it.
 
 This makes every break a conscious, two-step decision.
+
+**This applies to the publish bot's PRs too, and step 2 is a human's job.** The
+bot classifies its own commit from the diff, so it opens a breaking publish with a
+`feat!:` subject already correct — but it does not label its own PR, on purpose.
+`breaking-change` is an acknowledgement that a person accepts the downstream
+ripple, and a bot cannot make that acknowledgement on our behalf. So a breaking
+publish arrives blocked, and the reviewer adds the label. Expect that, rather than
+reading the red check as a bot failure.
+
+Adding the label re-runs the check on its own — `api-diff.yml` and the spec guard
+both listen for `labeled`. That is worth stating because it was not true until
+this was fixed alongside the guard: with the default activity types, labelling
+started no run, and a manual re-run replays the original event payload (labels
+included), so the documented remedy could not clear the check it exists to clear.
+If a re-run ever *does* look stale, push an empty commit rather than re-running —
+`synchronize` always carries a fresh payload.
 
 ## Downstream ripple
 
