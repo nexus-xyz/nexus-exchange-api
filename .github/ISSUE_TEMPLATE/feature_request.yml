@@ -5,10 +5,17 @@ body:
   - type: markdown
     attributes:
       value: |
-        Have a proposal for the API surface? This repo defines the spec
+        Have a proposal for the API surface? This repo publishes the spec
         (`openapi.json`); released versions are consumed by the downstream
         SDKs, so additive, optional changes are easiest to land. See
         [CONTRIBUTING.md](../../CONTRIBUTING.md) for the breaking-change policy.
+
+        **Propose it here, not as a pull request.** The spec is generated from
+        `eng/apps/exchange/api/openapi.json` in `nexus-xyz/nexus` and lands there
+        alongside the implementation that serves it — which is the point: a
+        published operation always has something behind it. A PR against this
+        repo cannot be merged and is closed automatically. This issue is the
+        entry point.
   - type: textarea
     id: problem
     attributes:

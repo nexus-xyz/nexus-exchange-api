@@ -23,20 +23,34 @@ them.
 there by the rule in that repo's `eng/apps/exchange/api/README.md`. It publishes
 here automatically on the next production deploy.
 
-A PR that edits `openapi.json` here turns the `Spec Source of Truth` check red
+## This repository does not accept pull requests
+
+Do not open a PR here to change the spec, and do not offer one — a human-authored
+PR is closed automatically by the `Publish-only mirror` workflow (ENG-10966),
+because an edit here is overwritten by the next publish and reaches users without
+ever passing the implementation, the tests or review in the monorepo.
+
+A PR that edits `openapi.json` also turns the `Spec Source of Truth` check red
 unless it is the publish bot's or release-please's — the check requires a bot
 author, not just the branch name, so naming a branch after the bot does not get
-you past it. **The check is visible, not a gate:** `main` has no required status
+you past it. **That check is visible, not a gate:** `main` has no required status
 checks, so a red guard is a signal to the CODEOWNER reviewing the PR rather than
-something that stops the merge. Closing the write path properly — restricted
-pushes, forking disabled, human PRs auto-closed — is ENG-10966.
+something that stops the merge. The auto-close is what actually closes the write
+path, and it is the *only* thing that closes the external one — forking cannot be
+disabled on a public repository, so there is no setting that stops a fork PR from
+being opened.
 
-If this repo genuinely has to be corrected first — an incident, or undoing a bad
-publish — add the `spec-reconciliation` label. Then land the matching change in
-the monorepo, because nothing detects the divergence for you: the monorepo's
-`not-behind-public` check was removed in ENG-10517 and ENG-10531's canary does
-not exist yet, so an unreconciled correction is silently overwritten by the next
-publish.
+Two labels are exempt, and either must be applied deliberately by a maintainer,
+so an outside contributor cannot self-exempt:
+
+- `repo-maintenance` — the PR is repo-local (CI, docs, templates). Those have no
+  other home. Apply it when you open the PR: `gh pr create --label repo-maintenance`.
+- `spec-reconciliation` — the generated spec has to be corrected here ahead of the
+  monorepo (an incident, or undoing a bad publish). Land the matching change in
+  the monorepo too, because nothing detects the divergence for you: the monorepo's
+  `not-behind-public` check was removed in ENG-10517 and ENG-10531's canary does
+  not exist yet, so an unreconciled correction is silently overwritten by the next
+  publish.
 
 ## Merging
 
@@ -52,6 +66,8 @@ publish.
 
 - One concern per PR; link its tracking issue (`ENG-XXXX`) in the title.
 - Respond to review comments before merging.
+- Before opening a PR here at all, check that it belongs here. A spec change does
+  not. A CI, docs or template change does, and needs the `repo-maintenance` label.
 
 ## Spec discipline
 

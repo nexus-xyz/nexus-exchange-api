@@ -5,10 +5,19 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for the report! This repo is the **API spec** (`openapi.json`),
-        not an SDK. Use this template when the spec is wrong — a field, type,
-        endpoint, or status code that doesn't match how the live API actually
-        behaves. Please search existing issues first to avoid duplicates.
+        Thanks for the report! This repo publishes the **API spec**
+        (`openapi.json`); it is not an SDK. Use this template when the spec is
+        wrong — a field, type, endpoint, or status code that doesn't match how
+        the live API actually behaves. Please search existing issues first to
+        avoid duplicates.
+
+        **An issue is the way to fix this, and the only way.** `openapi.json`
+        here is generated from `eng/apps/exchange/api/openapi.json` in
+        `nexus-xyz/nexus` and republished after every production deploy, so a
+        pull request against this repo cannot be merged — it would be overwritten
+        by the next publish, and human-authored PRs here are closed
+        automatically. Filing this issue is not the slow path: we correct the
+        spec at the source and it reaches you in the next published release.
   - type: input
     id: endpoint
     attributes:

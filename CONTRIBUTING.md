@@ -2,43 +2,72 @@
 
 This repository **publishes** the Nexus Exchange API contract. The artifact is
 [`openapi.json`](./openapi.json) — a single OpenAPI 3 document describing every
-REST and WebSocket endpoint — validated by CI and released as a versioned,
-downloadable asset that the SDKs pin.
+REST and WebSocket endpoint. There is no SDK or runnable code here; the spec
+itself is what we ship, validated by CI and released as a versioned, downloadable
+asset that the SDKs pin.
 
+> ### This repository does not accept pull requests
+>
 > **`openapi.json` is generated. Its source of truth is the Nexus monorepo, at
 > `eng/apps/exchange/api/openapi.json`.**
 >
 > The monorepo publishes the contract that a production deploy is *actually
-> serving*, and release-please here cuts the tag. So the spec in this repo
-> describes endpoints that exist and are live, rather than endpoints that are
+> serving*, and release-please here cuts the tag the SDKs pin. So the spec in this
+> repo describes endpoints that exist and are live, rather than endpoints that are
 > planned.
 >
 > That direction reversed in ENG-5886 (EDR-010). This repo used to be canonical,
 > with the monorepo vendoring a released tag from it. The cost of that shape: the
 > spec was published and externally visible while the implementation was still in
-> review, shipping one route took four coordinated steps across two repos, and
-> the published contract could document operations nothing served — five
-> `/v1/bridge` operations sat here for four weeks with no implementation behind
-> them, and three SDKs generated dead client methods from them.
+> review, shipping one route took four coordinated steps across two repos, and the
+> published contract could document operations nothing served — ENG-10373, five
+> `/v1/bridge` operations sitting here for four weeks with no implementation behind
+> them, and three SDKs generating dead client methods off the tag.
 >
-> A PR editing `openapi.json` turns the `Spec Source of Truth` check red unless
-> it comes from the publish bot or release-please — the check requires a bot
-> author as well as the branch name, so naming a branch after the bot does not
-> get a human past it. That is not bureaucracy: an edit here is overwritten by
-> the next production publish, so without the check it would merge, pass CI, cut
-> a release, and then silently disappear.
+> So an edit made **here** is overwritten by the next publish. It would merge, pass
+> CI, cut a release the SDKs pin, and then silently disappear — and it would reach
+> users without ever passing the implementation, the tests, or review in the
+> monorepo.
 >
-> **The check makes that visible; it does not by itself prevent it.** `main`
-> carries no required status checks, so the guard is a red signal to the CODEOWNER
-> whose approval *is* the gate. It also cannot be made required as things stand:
-> release-please's own PRs are opened with the default `GITHUB_TOKEN`, which
-> starts no workflow runs, so a required check would never report on them and
-> every release PR would block forever. Closing the write path at the source —
-> restricted pushes, forking disabled, human PRs auto-closed — is ENG-10966.
+> **If you are outside the Nexus team:** [open an
+> issue](https://github.com/nexus-xyz/nexus-exchange-api/issues/new/choose). That
+> is the right entry point, not a second-class one — we fix the spec at the source
+> and it reaches you in the next published release. You cannot land a spec change
+> here directly any more.
+>
+> **If you are on the Nexus team:** the change goes in the monorepo, in the same
+> PR as the implementation that serves it.
+>
+> A human-authored PR opened here is **closed automatically** by the
+> `Publish-only mirror` workflow, with a comment saying where the change belongs.
+> Two labels are exempt, and adding one when you open the PR
+> (`gh pr create --label repo-maintenance`) keeps it open:
+>
+> | Label | For |
+> |---|---|
+> | `repo-maintenance` | A genuinely repo-local change: CI, docs, templates. Those have no other home — they are not generated from the monorepo. |
+> | `spec-reconciliation` | Correcting the generated spec here *ahead* of the monorepo — an incident, or undoing a bad publish. Land the matching monorepo change too, or the next publish overwrites you. |
+>
+> A PR that stays open on a label and still edits `openapi.json` meets the second
+> guard: the `Spec Source of Truth` check goes red unless the PR comes from the
+> publish bot or release-please — it requires a bot author as well as the branch
+> name, so naming a branch after the bot does not get a human past it.
+>
+> **That check is visible; it does not by itself prevent anything.** `main` carries
+> no required status checks, so the guard is a red signal to the CODEOWNER whose
+> approval *is* the gate. It also cannot be made required as things stand:
+> release-please's own PRs are opened with the default `GITHUB_TOKEN`, which starts
+> no workflow runs, so a required check would never report on them and every
+> release PR would block forever. The automatic close is the enforcing half — and
+> on the external path it is the only enforcement there can be, because forking
+> cannot be disabled on a public repository.
+>
+> Note what the close is *not*: a judgement on the change. It is a redirect, and
+> nothing is lost — the branch, the commits and the discussion all survive, and a
+> maintainer can reopen with a label.
 
-If you found an inaccuracy, thank you — **open an issue here** and we will fix it
-at the source. If you are on the Nexus team, the change goes in the monorepo. This
-guide covers both, plus the versioning rules that still govern every release.
+This guide covers where a change goes, plus the versioning rules that still
+govern every release.
 
 ## What lives here
 
@@ -72,9 +101,12 @@ machine-readable.
 
 Three gates there enforce all of this, so none of it is a convention you have to
 remember: the `Exchange API Spec` required check fails a route change with no spec
-change **and** a bump that does not follow the rule, `API version pins are
-registered and in sync` fails a version layer left behind, and the indexer's
-conformance test fails a documented operation that no route serves.
+change **and** a bump that does not follow the rule; the `Governance gates`
+required check fails a version layer left behind, in its step *"Every pin is
+registered, and every registered pin matches the spec"*; and the indexer's
+route-coverage tests (`openapi_route_coverage.rs`, `engine_route_coverage.rs`)
+fail a documented operation that no route serves, and a served route the contract
+does not document.
 
 The contract then arrives here on the next production deploy, as a PR from the
 publish bot. Nothing needs doing in this repo.
@@ -133,9 +165,13 @@ ERR` run is not evidence that MINOR is the right bump; and the published baselin
 lags `main` by every merged spec change that has not been deployed, so it answers
 "how will the next publish classify" rather than "does my PR pass". The
 authoritative gates are the `Exchange API Spec` required check and the indexer's
-conformance test, both there, on your PR's own revision.
+route-coverage tests, both there, on your PR's own revision.
 
 ### 3. Write conventional-commit PRs
+
+This governs every PR that actually lands here — the publish bot's, and a
+labelled `repo-maintenance` one. Your monorepo PR follows the monorepo's own
+conventions; the bot classifies the publish from the diff.
 
 Versioning and the changelog are fully automated by
 [release-please](https://github.com/googleapis/release-please) — the

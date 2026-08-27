@@ -49,10 +49,14 @@ name: Spec Source of Truth
 # approval is the only gate — so a red guard is a signal to a reviewer, not a
 # block. Do NOT paper over that by adding it to the ruleset while the paragraph
 # below holds: it cannot report on release-please's PRs, so requiring it would
-# block every release PR forever. Enforcement that actually closes the write
-# path (restricted pushes, forking off, auto-closing human PRs) is ENG-10966;
-# this guard is the visible half, and the docs say so rather than implying a gate
-# that is not there (raised in review of #81).
+# block every release PR forever. Enforcement that actually closes the write path
+# is ENG-10966, landed in `publish-only-mirror.yml`: a human-authored PR is closed
+# outright unless it carries `repo-maintenance` or `spec-reconciliation`. Note
+# that ENG-10966 scoped "disable forking" as part of that and GitHub does not
+# offer it — the forking policy covers private and internal repos only — so the
+# auto-close is the ONLY thing closing the external path, not a belt to its
+# braces. This guard remains the visible half, and it is what still checks a PR
+# that survives on one of those two labels (raised in review of #81).
 #
 # THIS CHECK DOES NOT RUN ON release-please's OWN PRs. release-please cuts them
 # with the default `GITHUB_TOKEN`, and GitHub does not start workflow runs from
@@ -68,16 +72,20 @@ name: Spec Source of Truth
 # deliver `pull_request` events. The guard is therefore visible on the one PR
 # class that can actually rewrite the whole contract.
 #
-# A `spec-reconciliation` edit HAS NO AUTOMATIC BACKSTOP, and the label's warning
-# says so. An earlier revision of this comment claimed the monorepo's
-# `not-behind-public` check would independently flag the divergence; ENG-10517
-# deleted that check, because requiring equality with the published spec made
-# every monorepo PR hostage to deploy cadence. `eng-exchange-api-vendored-check.yml`
-# now states outright that detecting an edit made directly in this repo "has no
-# home", and ENG-10531 is the canary for it, deliberately off the PR path. So the
-# label is an obligation on the person applying it: land the matching change in
-# the monorepo (`eng/apps/exchange/scripts/bump-api-spec.sh` pulls this file
-# back), or the next production publish silently overwrites the correction.
+# A `spec-reconciliation` edit HAS NO AUTOMATIC BACKSTOP ON THE MONOREPO SIDE, and
+# the label's warning says so. An earlier revision of this comment claimed the
+# monorepo's `not-behind-public` check would independently flag the divergence.
+# ENG-10517 stopped every monorepo gate from reading this repo — comparing against
+# a publication target that lags `main` by each undeployed spec change let deploy
+# cadence decide a PR's fate — and ENG-9600 then deleted the workflow that carried
+# it, `eng-exchange-api-vendored-check.yml`, outright. Do not go looking for that
+# file: the live statement is in `eng/apps/exchange/api/README.md`, under "CI that
+# guards this", and ENG-10531 tracks the canary, deliberately off the PR path.
+#
+# So the label is an obligation on the person applying it: land the matching change
+# in the monorepo (`eng/apps/exchange/scripts/bump-api-spec.sh vX.Y.Z` pulls this
+# file back, and refuses to commit, because which side is right is a human's call),
+# or the next production publish silently overwrites the correction.
 #
 # This workflow cannot make itself tamper-proof. `pull_request` resolves the
 # workflow from the PR's HEAD, so a PR that edits the trigger below is judged by
