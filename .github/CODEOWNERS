@@ -1,6 +1,11 @@
-# Default reviewers. Any member of @nexus-xyz/eng can review and unblock — no
-# single-person bottleneck. @Luc-Campos (SDK lead), @collinjackson, and
-# @alecjames-dot are listed explicitly so all three are auto-requested on every
-# PR. @alecjames-dot is added for visibility into API changes.
+# Default reviewers: the @nexus-xyz/eng team. Any member can review and unblock --
+# no single-person bottleneck. @alecjames-dot stays named for visibility into API
+# changes, which is the reason this file gave for adding him.
+#
+# Named individuals are otherwise deliberately avoided: membership changes in org
+# settings, so joiners and leavers need no PR here. This file previously named a
+# since-departed SDK lead (ENG-14958). GitHub silently omits a non-member from a
+# review request, so such a line looks like coverage while providing none -- it
+# never fails, it just quietly means nothing.
 # Docs: https://docs.github.com/articles/about-code-owners
-* @nexus-xyz/eng @Luc-Campos @collinjackson @alecjames-dot
+* @nexus-xyz/eng @alecjames-dot
