@@ -1,5 +1,9 @@
 # Nexus Exchange API
 
+> [!WARNING]
+> **This repository is archived and no longer maintained.** The Nexus Exchange API it was built for is being
+> shut down, and no further releases will be published.
+
 [![API Version](https://img.shields.io/github/v/release/nexus-xyz/nexus-exchange-api?label=api)](https://github.com/nexus-xyz/nexus-exchange-api/releases)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](#license)
 
